@@ -1,4 +1,10 @@
+Git changes sgldhgh
+
 Changes in file done.  Changes in branch2 will stash.
+
+New Branch1 changes.
+
+Changes in file done.
 
 namespace Cyara.Web.Portal.Areas.Admin
 {
