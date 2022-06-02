@@ -1,4 +1,4 @@
-Changes in file done.  Changes
+Changes in file done.  Changes in branch2 will stash.
 
 namespace Cyara.Web.Portal.Areas.Admin
 {
