@@ -1,0 +1,294 @@
+﻿@using Cyara.Domain.Types.Common
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Types.ReportSchedule
+@using Cyara.Shared.Types.TestCase
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Areas.Report.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@using Cyara.Web.Portal.Core.SiteMap
+@using MvcSiteMapProvider.Web.Html
+@model Cyara.Web.Portal.Areas.Report.Models.CustomReportSummaryDetailsViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Header_" + Model.ResultType);
+}
+
+@section PageHead
+{
+    @Html.PageHeader(Model.ReportName)
+    @Html.RenderReportHint(Model.MediaType)
+}
+
+@section PageHeadRight
+{
+    <div class="btn-group">
+        <a href="#" class="btn js-export" data-type="@CustomReportExportType.Xls">@Html.Resource("Export")</a>
+        <button data-toggle="dropdown" tabindex="-1" class="btn dropdown-toggle"><span class="caret"></span></button>
+        <ul class="dropdown-menu pull-right">
+            <li class="lnk"><button id="btnExportPDF" tabindex="-1" class="js-export" data-type="@CustomReportExportType.Pdf" data-resulttype="@Model.ResultType">@CustomReportExportType.Pdf.ToLabel()</button></li>
+            <li class="lnk"><button id="btnExportXLS" tabindex="-1" class="js-export" data-type="@CustomReportExportType.Xls" data-resulttype="@Model.ResultType">@CustomReportExportType.Xls.ToLabel()</button></li>
+        </ul>
+    </div>
+}
+
+@section Breadcrumbs
+{
+    @Html.MvcSiteMap().GenerateBreadcrumbs(new[] { Url.Action("Index"), Url.Action("Edit", new { id = "" }) + "?id=" + @Model.ReportId, Url.Action(ViewContext.RouteData.Values["action"].ToString(), new { id = "" }) })
+}
+
+@section PageContent
+{
+    <div class="overlap">
+
+        @using (Html.BeginForm())
+        {
+            <div>
+                @Html.Partial("Filters", Model.Filter)
+            </div>
+        }
+
+        <div class="boxed-divider"></div>
+
+        <div class="boxed top-gap-small">
+            <h4>@Html.Resource("Header_" + Model.ResultType)</h4>
+
+            <div class="row-fluid">
+                @if (Model != null && Model.TestResultSummaries != null)
+                {
+                    <div class="pull-left">
+                        <div id="ReportSummaryDataArea"></div>
+                    </div>
+                    <div class="pull-left legend-scroll" tabindex="0">
+                        <table id="ReportSummaryData" class="legend-grid" data-calls-label="@Html.ReportingGlobalResource("TotalCalls", "TotalSessions")">
+                            @foreach (var testResultSummary in Model.TestResultSummaries)
+                            {
+                                <tr>
+                                    <td title="@testResultSummary.Percent%"><span data-type="colour" class="legend legend-colour">&nbsp;</span></td>
+                                    <td data-type="label" title="@testResultSummary.Percent%">@testResultSummary.DetailedResult</td>
+                                    <td data-type="data" style="display: none">@testResultSummary.Number</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        <div class="boxed-divider"></div>
+
+        <div class="boxed">
+            <h2 aria-label="@Html.GlobalResource("Details")"></h2>
+
+            @using (Html.BeginFormForEnumerable("ResultsSummaryDetails", "report", new { resultTypeId = (int)Model.ResultType }, FormMethod.Post, new { id = "resultssummarydetails" }))
+            {
+                <div>
+                    @if (Model.CampaignRunTestResultDetails != null)
+                    {
+                        <table id="campaignRunTestResultDetailsGrid" class="table truncated table-striped table-hover finger">
+                            <colgroup>
+                                <col style="width: 20%"/>
+                                <col style="width: 13%"/>
+                                <col style="width: 7%"/>
+                                <col style="width: 60%"/>
+                            </colgroup>
+                            <thead>
+                            <tr>
+                                <th data-sort="@Columns.TestCase"><a href="#">@Html.GlobalResource("TableHeading_TestCase")</a></th>
+                                <th data-sort="@Columns.Folder"><a href="#">@Html.GlobalResource("TableHeading_Folder")</a></th>
+                                <th data-sort="@Columns.Calls"><a href="#">@Html.ReportingGlobalResource("TableHeading_Calls", "TableHeading_Sessions")</a></th>
+                                <th>@Html.GlobalResource("TableHeading_ErrorBreakDownByTestCase")</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var campaignRunTestResultDetails in Model.CampaignRunTestResultDetails.Collection)
+                            {
+                                <tr>
+                                    <td class="truncate">@campaignRunTestResultDetails.TestCase</td>
+                                    <td class="truncate">@campaignRunTestResultDetails.Folder</td>
+                                    <td>@campaignRunTestResultDetails.Calls</td>
+                                    <td>
+                                        @if (campaignRunTestResultDetails.DetailedResult != null)
+                                        {
+                                            <table class="table table-striped table-hover finger">
+                                                <colgroup>
+                                                    <col style="width: 7%"/>
+                                                    <col style="width: 63%"/>
+                                                </colgroup>
+                                                <thead>
+                                                <tr>
+                                                    <th>@Html.ReportingGlobalResource("TableHeading_Calls", "TableHeading_Sessions")</th>
+                                                    <th>@Html.GlobalResource("TableHeading_DetailedResult")</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                @foreach (var detail in campaignRunTestResultDetails.DetailedResult)
+                                                {
+                                                    <tr>
+                                                        <td>@detail.Number</td>
+                                                        <td>
+                                                            <a data-detailedresult="@detail.DetailedResultParameter" data-testcasename="@detail.TestCaseName" data-folderpath="@campaignRunTestResultDetails.Folder">
+                                                                @detail.DetailedResult
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                                </tbody>
+                                            </table>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+                @Html.AntiForgeryToken()
+                @Html.HiddenForEnumerable(m => m.RunIds)
+                @Html.HiddenFor(m => m.DetailedResult)
+                @Html.HiddenFor(m => m.TestCaseName)
+                @Html.HiddenFor(m => m.FolderPath)
+                @Html.HiddenFor(m => m.ResultType)
+            }
+            <div id="campaignRunTestResultsGridDiv">
+                <h2>@Html.ReportingResource("CallDetail", "SessionDetail")</h2>
+                @Html.Partial("DisplayTemplates/CampaignRunTestResultViewData", Model.CampaignRunTestResults, new ViewDataDictionary(ViewData) { { "MediaType", Model.MediaType }, { "FailedRetries", false } })
+            </div>
+        </div>
+    </div>
+
+    <script id="campaignRunTestResultDetails-template-row" type="text/x-tmpl">
+        <tr>
+            <td class="truncate">{%=o.testCase %}</td>
+            <td class="truncate">{%=o.folder!=null && o.folder!=''? o.folder : "\\" %}</td>
+            <td>{%=o.calls %}</td>
+            <td>
+                 <table class="table table-striped table-hover finger">
+                    <colgroup>
+                        <col style="width: 7%"/>
+                        <col style="width: 63%"/>
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            @if (Model.MediaType == MediaType.Email)
+                            {
+                                <th>@Html.GlobalResource("TableHeading_Sessions")</th>
+                            }
+                            else
+                            {
+                                <th>@Html.GlobalResource("TableHeading_Calls")</th>
+                            }
+                            <th>@Html.GlobalResource("TableHeading_DetailedResult")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for (var i = 0; i < o.detailedResult.length; i++) { %}
+                            <tr>
+                                <td>{%=o.detailedResult[i].number %}</td>
+                                <td>
+                                    <a data-detailedresult="{%=o.detailedResult[i].detailedResultParameter %}" data-testcasename="{%=o.detailedResult[i].testCaseName %}" data-folderpath="{%=o.folder %}">{%= o.detailedResult[i].detailedResult %}</a>
+                                </td>
+                            </tr>
+                        {% } %}
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </script>
+
+
+    <script type="text/javascript">
+        $(function() {
+            var campaignRunTestResultsGrid = new AjaxGrid({
+                dataSourceUrl: '@Url.Action("ListCampaignRunTestResultsByDetailedResult")',
+                table: '#campaignRunTestResultsGrid',
+                totalPages: @Model.CampaignRunTestResults.TotalPages,
+                collectionSize: @Model.CampaignRunTestResults.CollectionSize,
+                pageSize: @Model.CampaignRunTestResults.PageSize,
+                pageNumber: @Model.CampaignRunTestResults.PageNumber,
+                sortColumn: '@Model.CampaignRunTestResults.SortColumn.ToJavascriptSafeString()',
+                sortAscending: @Model.CampaignRunTestResults.SortAscending.ToString().ToLower(),
+                rowTemplate: 'campaignRunTestResults-template-row',
+                recordLabel:
+                    '@Html.ReportingResource("RecordLabelTestResultsByDetailedResult", "RecordLabelSessions").ToJavascriptSafeString()',
+                requestPreProcessor: function(request) {
+                    request.mediaType = '@Model.MediaType';
+                    request.@(Html.NameFor(m => m.RunIds)) = [@(String.Join(",", Model.RunIds))];
+                    request.@(Html.NameFor(m => m.DetailedResult)) = $('#@Html.IdFor(m => m.DetailedResult)').val();
+                    request.@(Html.NameFor(m => m.TestCaseName)) = $('#@Html.IdFor(m => m.TestCaseName)').val();
+                    request.@(Html.NameFor(m => m.FolderPath)) = $('#@Html.IdFor(m => m.FolderPath)').val();
+                    request.@(Html.NameFor(m => m.ResultType)) = $('#@Html.IdFor(m => m.ResultType)').val();
+                },
+                autoClickFirstLink: true
+            });
+
+            $("#campaignRunTestResultsGrid").bind("AjaxGrid_PageLoad",
+                function() {
+                    SmsMessageViewer.dynamic();
+                    $('.toolpop, .toolpop-holder', this).toolpop();
+                });
+
+            var campaignRunTestResultDetailsGrid = new AjaxGrid({
+                dataSourceUrl: '@Url.Action("ListCampaignRunTestResultDetails")',
+                table: '#campaignRunTestResultDetailsGrid',
+                totalPages: @Model.CampaignRunTestResultDetails.TotalPages,
+                collectionSize: @Model.CampaignRunTestResultDetails.CollectionSize,
+                pageSize: @Model.CampaignRunTestResultDetails.PageSize,
+                pageNumber: @Model.CampaignRunTestResultDetails.PageNumber,
+                sortColumn: '@Model.CampaignRunTestResultDetails.SortColumn.ToJavascriptSafeString()',
+                sortAscending: @Model.CampaignRunTestResultDetails.SortAscending.ToString().ToLower(),
+                rowTemplate: 'campaignRunTestResultDetails-template-row',
+                recordLabel: '@Html.Resource("RecordLabelTestResultDetails").ToJavascriptSafeString()',
+                requestPreProcessor: function(request) {
+                    request.routeAccountId = @Model.SelectedAccountId;
+                    request.id = @Model.ReportId;
+                    request.timestamp = '@Html.Raw(Model.ViewLoaded)';
+                    request.@(Html.NameFor(m => m.RunIds)) = [@(String.Join(",", Model.RunIds))];
+                    request.@(Html.NameFor(m => m.DetailedResult)) = $('#@Html.IdFor(m => m.DetailedResult)').val();
+                    request.@(Html.NameFor(m => m.TestCaseName)) = $('#@Html.IdFor(m => m.TestCaseName)').val();
+                    request.@(Html.NameFor(m => m.FolderPath)) = $('#@Html.IdFor(m => m.FolderPath)').val();
+                    request.@(Html.NameFor(m => m.ResultType)) = $('#@Html.IdFor(m => m.ResultType)').val();
+                }
+            });
+
+            $('#campaignRunTestResultsGridDiv').hide();
+            $(document).on('click',
+                'a[data-detailedresult]',
+                $.proxy(function(e) {
+                    e.preventDefault();
+                    $('#@Html.IdFor(m => m.DetailedResult)').val($(e.target).attr('data-detailedresult'));
+                    $('#@Html.IdFor(m => m.TestCaseName)').val($(e.target).attr('data-testcasename'));
+                    $('#@Html.IdFor(m => m.FolderPath)').val($(e.target).attr('data-folderpath'));
+                        campaignRunTestResultsGrid.refresh();
+                        $('#campaignRunTestResultsGridDiv').show();
+
+                        ScrollTo('#campaignRunTestResultsGridDiv', 100);
+
+                        return false;
+                    },
+                    this));
+
+            var popoverHandler = new ReportChartPopover({
+                dataUrl: '@Url.Action("PopoverDataForCategory", "Custom", new { id = Model.ReportId })',
+                dataUrlPayloadFn: function(label) {
+                    return JSON.stringify({ resultType: '@Model.ResultType', testResultCategory: label, timestamp: '@Html.Raw(Model.ViewLoaded)', SelectedAccountId: $("#SelectedAccountId").val() });
+                },
+                enableLinks: false,
+                callsLabel: $('#ReportSummaryData').attr('data-calls-label')
+            });
+
+            var chart = new ReportChart({
+                dataTableName: 'ReportSummaryData',
+                chartTableName: 'ReportSummaryDataArea',
+                generateColours: true,
+                enableLinks: true,
+                enablePopovers: true,
+                popoverHandler: popoverHandler
+            });
+
+        });
+    </script>
+}

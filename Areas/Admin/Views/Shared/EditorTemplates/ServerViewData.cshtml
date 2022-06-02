@@ -1,0 +1,11 @@
+﻿@model Cyara.Web.Portal.Areas.Admin.Models.ServerViewData
+
+@Html.HiddenFor(m => m.Hostname)
+@Html.HiddenFor(m => m.Port)
+@Html.HiddenFor(m => m.ServerId)
+@Html.HiddenFor(m => m.ServerName)
+
+@Html.ValidationMessageFor(x => x.Hostname)
+@Html.ValidationMessageFor(x => x.Port)
+@Html.ValidationMessageFor(x => x.ServerId)
+@Html.ValidationMessageFor(x => x.ServerName)

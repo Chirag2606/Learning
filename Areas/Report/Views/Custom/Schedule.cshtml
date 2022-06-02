@@ -1,0 +1,257 @@
+﻿@using Cyara.Domain.Types.TestResult
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Reflection
+@using Cyara.Shared.Types.ReportSchedule
+@using Cyara.Shared.Types.TestCase
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal
+@using Cyara.Web.Portal.Areas.Report.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@model Cyara.Web.Portal.Areas.Report.Models.ScheduleViewModel
+
+
+@using (Html.BeginForm("Schedule", "Custom", FormMethod.Post, new { @class = "form-horizontal" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ReportId)
+    @Html.HiddenFor(m => m.IsReloading)
+    @Html.HiddenFor(m => m.IsRefreshing)
+    @Html.HiddenFor(m => m.RefreshCounterId)
+    @Html.HiddenFor(m => m.ReplaceTarget)
+    @Html.HiddenFor(m => m.SelectedAccountId)
+
+    <div class="pop-intro">
+        <div class="pull-right form-head-info">
+            <div class="switch switch-medium" data-on="success" data-off="danger" data-on-label="@Html.GlobalResource("Active").ToUpper()" data-off-label="@Html.GlobalResource("Inactive").ToUpper()">
+                @Html.CheckBoxFor(m => m.Active)
+            </div>
+        </div>
+        <div><b>@Html.Resource("Heading")</b> @Html.Resource("Introduction")</div>
+    </div>
+
+    <div class="form-wrap">
+
+        <div class="control-group">
+            @Html.LabelForWithRequired(m => m.EmailRecipients, new { @class = "control-label" })
+            <div class="controls under">
+                @Html.TextBoxFor(m => m.EmailRecipients, new { @class = "inline", @style = "width:385px;", @placeholder = @Html.Resource("EmailPlaceholder") })
+                <br />
+                @Html.ValidationMessageFor(m => m.EmailRecipients, null, new { @style = "white-space: pre-wrap;" })
+            </div>
+        </div>
+
+        <div class="control-group">
+            @Html.LabelFor(m => m.Format, new { @class = "control-label" })
+            <div class="controls popover-checkboxes">
+                <label class="radio inline">
+                    @Html.RadioButtonFor(m => m.Format, CustomReportExportType.Pdf.ToString(), new { @id = "FormatPdf" })
+                    @Html.Resource("PDF")
+                </label>
+                <label class="radio inline">
+                    @Html.RadioButtonFor(m => m.Format, CustomReportExportType.Xls.ToString(), new { @id = "FormatCsv" })
+                    @Html.Resource("CSV")
+                </label>
+                @Html.ValidationMessageFor(m => m.Format)
+            </div>
+        </div>
+
+        <div class="control-group popover-preview-content">
+            <label class="control-label">@Html.Resource("Reports")</label>
+            <div class="controls">
+                <div class="row-fluid">
+                    <div class="span11">
+                        @Html.Resource("ResultsSummary")
+                    </div>
+                    <div class="span1">
+                        <label class="inline-label">
+                            <i class="preview-icon-xsmall js-preview js-summary"></i>
+                        </label>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <div class="span5">
+                        <label class="checkbox inline-label">
+                            @Html.CheckBoxFor(m => m.IncludeFailed, new { @class = "input-largedouble js-preview" })
+                            @Html.Resource("FailedResults")
+                        </label>
+                    </div>
+                    <div class="span1">
+                        <label class="inline-label">
+                            <i class="preview-icon-xsmall js-preview js-failed"></i>
+                        </label>
+                    </div>
+                    <div class="span5">
+                        <label class="checkbox inline-label">
+                            @Html.CheckBoxFor(m => m.IncludeSatisfactory, new { @class = "input-largedouble js-preview" })
+                            @Html.Resource("SatisfactoryResults")
+                        </label>
+                    </div>
+                    <div class="span1">
+                        <label class="inline-label">
+                            <i class="preview-icon-xsmall js-preview js-satisfactory"></i>
+                        </label>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <div class="span5">
+                        <label class="checkbox inline-label">
+                            @Html.CheckBoxFor(m => m.IncludeAborted, new { @class = "input-largedouble js-preview" })
+                            @Html.Resource("AbortedResults")
+                        </label>
+                    </div>
+                    <div class="span1">
+                        <label class="inline-label">
+                            <i class="preview-icon-xsmall js-preview js-aborted"></i>
+                        </label>
+                    </div>
+                    <div class="span5">
+                        <label class="checkbox inline-label">
+                            @Html.CheckBoxFor(m => m.IncludeInternalErrors, new { @class = "input-largedouble js-preview" })
+                            @Html.Resource("InternalErrorResults")
+                        </label>
+                    </div>
+                    <div class="span1">
+                        <label class="inline-label">
+                            <i class="preview-icon-xsmall js-preview js-internal"></i>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="controls popover-checkboxes">
+                <div class="row-fluid">
+                    <div class="span5" style="display: table-row">
+                        <span>
+                            <label class="checkbox inline-label" style="padding-right:0;">
+                                @Html.CheckBoxFor(m => m.IncludeTestRuns, new { @class = "input-largedouble js-testrun" })
+                                @Html.Resource("IncludeTestRuns")
+                            </label>
+                            @Html.Tooltip(Html.Resource("TruncationWarning").FormatWith(MvcApplication.Settings.PdfExportResultsThreshold), Html.GlobalResource("TipLabel"))
+                        </span>
+                    </div>
+                    <div class="span7" style="display: table-row">
+                        <span>
+                            <label class="checkbox inline-label" style="padding-right:0;">
+                                @Html.CheckBoxFor(m => m.CompressReports, new { @class = "input-largedouble" })
+                                @Html.Resource("SendCompressedReports")
+                            </label>
+                            @Html.Tooltip(Html.Resource("ZipHelp"), Html.GlobalResource("TipLabel"), "left")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            @Html.LabelForWithRequired(m => m.Start, new { @class = "control-label" })
+            <div class="controls">
+                <div class="input-append">
+                    @Html.TextBoxFor(m => m.Start, new { @class = "input-medium", data_format = @Model.DatePattern, @Value = Model.Start.FormatToPickerDateTime() })
+                    <span class="add-on">
+                        <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                    </span>
+                </div>
+                @Html.ValidationMessageFor(m => m.Start)
+            </div>
+        </div>
+
+        <div class="control-group">
+            @Html.LabelFor(m => m.Repeats, new { @class = "control-label" })
+            <div class="controls">
+                @Html.DropDownListFor(m => m.Repeats, Model.RepeatChoices)
+                @Html.ValidationMessageFor(m => m.Repeats)
+            </div>
+        </div>
+
+        @if (Model.Period != null)
+        {
+            @Html.EditorFor(m => m.Period)
+        }
+
+        <div class="control-group">
+            @Html.LabelFor(m => m.Period, new { @class = "control-label" })
+            <div class="controls">
+                <div id="idPeriod" class="control-summary">@(Model.Period == null ? Html.GlobalResource("Schedule_Once") : Model.Period.ToString())</div>
+            </div>
+        </div>
+
+    </div>
+    <div class="form-actions">
+        @Html.ErrorPanel(Model.Message)
+        <button type="submit" id="saveButton" name="saveButton" class="btn btn-primary btn-submit popover-submit">@Html.GlobalResource("Save")</button>
+        <button type="button" id="cancelButton" class="btn popover-cancel">@Html.GlobalResource("Cancel")</button>
+    </div>
+}
+
+<script id="template-unavailableConfirmationDialog" type="text/x-templ">
+    <p>@Html.Resource("UnavailableBlurb")</p>
+    <div class="control-group">
+        <label class="radio inline">
+            @Html.RadioButton(@ReflectOn<ScheduleMonthlyDetails>.GetProperty(m => m.ScheduleUnavailable).Name, @ScheduleUnavailableOption.Skip.ToString(), new { id = string.Empty, @checked = "checked" })
+            @ScheduleUnavailableOption.Skip.ToLabel()
+        </label>
+    </div>
+    <div class="control-group">
+        <label class="radio inline">
+            @Html.RadioButton(@ReflectOn<ScheduleMonthlyDetails>.GetProperty(m => m.ScheduleUnavailable).Name, @ScheduleUnavailableOption.ClosestDayInMonth.ToString(), new { id = string.Empty })
+            @ScheduleUnavailableOption.ClosestDayInMonth.ToLabel()
+        </label>
+    </div>
+</script>
+
+<script type="text/javascript">
+    (function() {
+
+        $('.toolpop').toolpop();
+
+        ScheduleReport.getInstance(".js-schedule-pop").prime(
+            {
+                isReloading: '#@Html.IdFor(m => m.IsReloading)',
+                start: '#@Html.IdFor(m => m.Start)',
+                repeats: '#@Html.IdFor(m => m.Repeats)',
+                isRefreshing: '#@Html.IdFor(m => m.IsRefreshing)',
+                refreshCounterId: '#@Html.IdFor(m => m.RefreshCounterId)',
+                summary: '#idPeriod',
+                submit: '#saveButton',
+                preview: 'i.js-preview',
+                reportTypeSelection: 'input.js-preview',
+                reportTypeSelectionChanged: function() {
+                    if (!$("#@Html.IdFor(m => m.IncludeFailed)").is(":checked") &&
+                        !$("#@Html.IdFor(m => m.IncludeAborted)").is(":checked") &&
+                        !$("#@Html.IdFor(m => m.IncludeInternalErrors)").is(":checked") &&
+                        !$("#@Html.IdFor(m => m.IncludeSatisfactory)").is(":checked")) {
+                        $("#@Html.IdFor(m => m.IncludeTestRuns)").prop('checked', false);
+                    }
+                },
+                previewUrl: '@Url.Action("Export", new { id = Model.ReportId, type="REPLACE_ME" }).ToJavascriptSafeString()',
+                previewFormat: function(target) {
+                    var pdfRadio = $("#FormatPdf");
+                    var csvRadio = $("#FormatCsv");
+                    var requestedOption = null;
+                    if($(target).hasClass("js-summary")) requestedOption = null;
+                    else if($(target).hasClass("js-failed")) requestedOption = '@ResultType.Failed';
+                    else if($(target).hasClass("js-satisfactory")) requestedOption = '@ResultType.Satisfactory';
+                    else if($(target).hasClass("js-aborted")) requestedOption = '@ResultType.Aborted';
+                    else if($(target).hasClass("js-internal")) requestedOption = '@ResultType.InternalError';
+                    var format = pdfRadio.is(':checked') ? pdfRadio.val() : csvRadio.val();
+                    if (requestedOption != null) {
+                        if ($("#@Html.IdFor(m => m.IncludeTestRuns)").is(':checked')) {
+                            format += "&includeTestRuns=true";
+                        }
+
+                        return format + "&resultType=" + requestedOption;
+                    }
+
+                    return format;
+                },
+                hasUnavailableRuns: '@Url.Action("HasUnavailableSchedule")',
+                unavailableDialogHeader: '@Html.Resource("UnavailableHeader").ToJavascriptSafeString()',
+                unavailableDialogTemplate: 'template-unavailableConfirmationDialog',
+                modalUnavailableRadioSelector: "input[name='@(ReflectOn<ScheduleMonthlyDetails>.GetProperty(m => m.ScheduleUnavailable).Name)']:checked"
+            });
+     })();
+
+</script>

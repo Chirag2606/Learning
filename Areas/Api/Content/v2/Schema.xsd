@@ -1,0 +1,736 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+cd Cyara\WebPortal\trunk\PortalNext\Cyara.Web.Portal\Areas\Api\Content\v2
+xsd Schema.xsd /c /l:cs /n:Cyara.Web.Portal.Areas.Api.Models.v2
+
+As we want all nodes output, and the XmlSerializer by design will not output XML nodes that are equal to the default
+We need to go through the code generated above and comment out the DefaultValueAttribute attributes on the fields
+In this way, the code still has the default (in the constructors), but serialization will output all fields.
+-->
+<xs:schema id="Schema"
+    targetNamespace="Schema.xsd"
+    elementFormDefault="qualified"
+    xmlns="Schema.xsd"
+    xmlns:mstns="http://tempuri.org/Schema.xsd"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+>
+  <xs:simpleType name="BehaviourType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Voice" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CampaignStatus">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Aborted" />
+      <xs:enumeration value="ClashingCalledNumbers" />
+      <xs:enumeration value="Completed" />
+      <xs:enumeration value="ExceededPorts" />
+      <xs:enumeration value="GenerationFailed" />
+      <xs:enumeration value="InternalError" />
+      <xs:enumeration value="None" />
+      <xs:enumeration value="Pending" />
+      <xs:enumeration value="Queued" />
+      <xs:enumeration value="Running" />
+      <xs:enumeration value="Finishing" />
+      <xs:enumeration value="Aborting" />
+      <xs:enumeration value="ExpiredPlan" />
+      <xs:enumeration value="FuturePlan" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="CampaignRunStatus">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Aborted" />
+      <xs:enumeration value="Failed" />
+      <xs:enumeration value="InternalError" />
+      <xs:enumeration value="Satisfactory" />
+      <xs:enumeration value="Running" />
+      <xs:enumeration value="Success" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="CallFlowType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Outbound" />
+      <xs:enumeration value="Inbound" />
+      <xs:enumeration value="Both" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="CyaraXmlImportResultType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Error" />
+      <xs:enumeration value="Information" />
+      <xs:enumeration value="Progress" />
+      <xs:enumeration value="Title" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="DialResultType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Aborted" />
+      <xs:enumeration value="Busy" />
+      <xs:enumeration value="Connected" />
+      <xs:enumeration value="NoAnswer" />
+      <xs:enumeration value="NoResponse" />
+      <xs:enumeration value="OperatorMessage" />
+      <xs:enumeration value="OtherFailure" />
+      <xs:enumeration value="Rejected" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="PlanType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="VirtualAgent" />
+      <xs:enumeration value="Cruncher" />
+      <xs:enumeration value="CruncherLite" />
+      <xs:enumeration value="Outbound" />
+      <xs:enumeration value="Pulse" />
+      <xs:enumeration value="PulseOutbound" />
+      <xs:enumeration value="Replay" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="ReplyActionType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="NONE" />
+      <xs:enumeration value="Answer" />
+      <xs:enumeration value="DoNotAnswer" />
+      <xs:enumeration value="Busy" />
+      <xs:enumeration value="Reject" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="ResultType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Aborted" />
+      <xs:enumeration value="Failed" />
+      <xs:enumeration value="InternalError" />
+      <xs:enumeration value="Satisfactory" />
+      <xs:enumeration value="Success" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SpeechDTMFAudioType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Speech" />
+      <xs:enumeration value="DTMF" />
+      <xs:enumeration value="AudioFile" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="SpeechDTMFType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Speech" />
+      <xs:enumeration value="MPSR" />
+      <xs:enumeration value="PESQ" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="TestCaseDistributionProfile">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="EqualProbability" />
+      <xs:enumeration value="RoundRobin" />
+      <xs:enumeration value="UserDefinedProbability" />
+      <xs:enumeration value="SequentialConditional" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Weekday">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Sunday" />
+      <xs:enumeration value="Monday" />
+      <xs:enumeration value="Tuesday" />
+      <xs:enumeration value="Wednesday" />
+      <xs:enumeration value="Thursday" />
+      <xs:enumeration value="Friday" />
+      <xs:enumeration value="Saturday" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="UtcDateTime">
+    <xs:annotation>
+      <xs:documentation>
+        This is ISO format 8601
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:dateTime">
+      <xs:pattern value=".+T.+(Z|[+-]([01]\d|2[0123]):[0-5]\d)" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="UtcTime">
+    <xs:annotation>
+      <xs:documentation>
+        This is ISO time format 8601
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="([01]\d|2[0123]):[0-5]\d:[0-5]\d(\.\d{1,6})?(Z|[+-]([01]\d|2[0123]):[0-5]\d)" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="GUID">
+    <xs:annotation>
+      <xs:documentation xml:lang="en">
+        The representation of a GUID, generally the id of an element.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RunForUnit">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Minutes" />
+      <xs:enumeration value="Calls" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="RunFor">
+    <xs:sequence>
+      <xs:element name="Value" type="xs:int" />
+      <xs:element name="Unit" type="RunForUnit" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TimeSpan">
+    <xs:sequence>
+      <xs:element name="Days" type="xs:int" minOccurs="0" default="0" />
+      <xs:element name="Hours" type="xs:int" minOccurs="0" default="0" />
+      <xs:element name="Minutes" type="xs:int" minOccurs="0" default="0" />
+      <xs:element name="Seconds" type="xs:int" minOccurs="0" default="0" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TimeUnitSeconds">
+    <xs:sequence>
+      <xs:element name="Seconds" type="xs:int" minOccurs="0" default="0" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="PauseLimitDecimal">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0" />
+      <xs:maxInclusive value="120" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ThresholdLimitDecimal">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0" />
+      <xs:maxInclusive value="3600" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PSSTLimitDecimal">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0" />
+      <xs:maxInclusive value="250" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="FrequencyUnit">
+    <xs:sequence>
+      <xs:element name="Hours" type="xs:int" minOccurs="0" default="0" />
+      <xs:element name="Minutes" type="xs:int" minOccurs="0" default="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="SchedulePeriod">
+    <xs:sequence>
+      <xs:element name="Day" type="Weekday" />
+      <xs:element name="From" type="UtcTime" />
+      <xs:element name="To" type="UtcTime" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="Percentage">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="0" />
+      <xs:maxInclusive value="100" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="CampaignRun">
+    <xs:sequence>
+      <xs:element name="RunId" type="xs:int" />
+      <xs:element name="StartDate" type="UtcDateTime" />
+      <xs:element name="EndDate" type="UtcDateTime" nillable="true"/>
+      <xs:element name="Status" type="CampaignRunStatus" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CampaignRunSummary">
+    <xs:sequence>
+      <xs:element name="Request" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="RunDate" type="UtcDateTime" />
+            <xs:element name="Status" type="CampaignStatus" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Previous" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Run" minOccurs="0" type="CampaignRun" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestCaseProbability">
+    <xs:sequence>
+      <xs:element name="TestCaseId" type="xs:int" />
+      <xs:element name="Name" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="FolderPath" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="Probability" type="Percentage" minOccurs="0" default="100" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestCaseProbabilityList">
+    <xs:sequence>
+      <xs:element name="TestCase" type="TestCaseProbability" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestCaseSummary">
+    <xs:sequence>
+      <xs:element name="TestCaseId" type="xs:int" />
+      <xs:element name="Name" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="FolderPath" type="xs:string" minOccurs="0" default="" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestCaseSummaryList">
+    <xs:sequence>
+      <xs:element name="TestCase" type="TestCaseSummary" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestResultDetail">
+    <xs:sequence>
+      <xs:element name="Result" type="ResultType" />
+      <xs:element name="Detail" type="xs:string" minOccurs="0" default="" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DialResultDetail">
+    <xs:sequence>
+      <xs:element name="Result" type="DialResultType" />
+      <xs:element name="Detail" type="xs:string" minOccurs="0" default="" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="RingStepResult">
+    <xs:sequence>
+      <xs:element name="Step" type="TestStepRingType" />
+      <xs:element name="StepResult" type="TestResultDetail" />
+      <xs:element name="ResponseTime" type="TimeSpan" />
+      <xs:element name="Duration" type="TimeSpan" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CallStepResult">
+    <xs:sequence>
+      <xs:element name="Step" type="TestStepType" />
+      <xs:element name="StepResult" type="TestResultDetail" />
+      <xs:element name="ResponseTime" type="TimeSpan" />
+      <xs:element name="Duration" type="TimeSpan" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CyaraXmlImportResult">
+    <xs:sequence>
+      <xs:element name="Type" type="CyaraXmlImportResultType" />
+      <xs:element name="Result" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CyaraXmlResult">
+    <xs:sequence>
+      <xs:element name="xPath" type="xs:string" minOccurs="0" maxOccurs="1"></xs:element>
+      <xs:element name="Result" type="xs:string" minOccurs="0" maxOccurs="1"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CyaraXmlItemResult">
+    <xs:sequence>
+      <xs:element name="xPath" type="xs:string" minOccurs="1" maxOccurs="1" />
+      <xs:element name="Name" type="xs:string" minOccurs="1" maxOccurs="1" />
+      <xs:element name="Folder" type="xs:string" minOccurs="1" maxOccurs="1" />
+      <xs:element name="id" type="xs:int" nillable="true" />
+      <xs:element name="Information" type="CyaraXmlResult" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="Error" type="CyaraXmlResult" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="TestStepResultList">
+    <xs:sequence>
+      <xs:element name="RingStepResult" type="RingStepResult" minOccurs="0" maxOccurs="1" />
+      <xs:element name="CallStepResult" type="CallStepResult" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ThresholdTimeType">
+    <xs:sequence>
+      <xs:element name="Minor" type="ThresholdLimitDecimal" minOccurs="0" default="0" />
+      <xs:element name="Major" type="ThresholdLimitDecimal" minOccurs="0" default="0" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PauseTimeType">
+    <xs:sequence>
+      <xs:element name="Min" type="PauseLimitDecimal" minOccurs="0" default="0" />
+      <xs:element name="Max" type="PauseLimitDecimal" minOccurs="0" default="0" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestStepType">
+    <xs:sequence>
+      <xs:element name="StepNo" type="xs:int" />
+      <xs:element name="Description" type="xs:string" />
+      <xs:element name="Expect" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="ExchangeType" type="SpeechDTMFType" />
+            <xs:element name="Text" type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Reply" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="ExchangeType" type="SpeechDTMFAudioType" />
+            <xs:element name="Text" type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="ThresholdTime" type="ThresholdTimeType" />
+      <xs:element name="PauseTime" type="PauseTimeType" minOccurs="0" />
+      <xs:element name="MinConfidenceLevel" minOccurs="0" default="0" type="Percentage" />
+      <xs:element name="PostSpeechSilenceTimeout" default="0" minOccurs="0" type="PSSTLimitDecimal" />
+      <xs:element name="BlockPath" type="xs:string" minOccurs="0" default="" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestStepRingType">
+    <xs:sequence>
+      <xs:element name="ReplyType" type="ReplyActionType" default="NONE" />
+      <xs:element name="ThresholdTime" type="ThresholdTimeType" />
+      <xs:element name="PauseTime" type="PauseTimeType" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestCaseResult">
+    <xs:sequence>
+      <xs:element name="TestCase" type="TestCase" />
+      <xs:element name="TestResult" type="TestResultDetail" minOccurs="0" />
+      <xs:element name="DialResult" type="DialResultDetail" minOccurs="0" />
+      <xs:element name="RunDate" type="UtcDateTime" nillable="true" />
+      <xs:element name="Duration" type="TimeSpan" minOccurs="0" />
+      <xs:element name="CalledPhoneNumber" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="CallingPhoneNumber" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="TestStepResultList" type="TestStepResultList" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestCaseResult2">
+    <xs:complexContent>
+      <xs:extension base="TestCaseResult">
+        <xs:sequence>
+          <xs:element name="TestResultId" type="xs:int" nillable="true" minOccurs="1"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="TestCase">
+    <xs:sequence>
+      <xs:element name="TestCaseId" type="xs:int" />
+      <xs:element name="Name" type="xs:string" />
+      <xs:element name="Active" type="xs:boolean" />
+      <xs:element name="FolderPath" type="xs:string" />
+      <xs:element name="Description" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="CallFlow" type="CallFlowType" />
+      <xs:element name="CalledNumber" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="PreConnectAudio" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="Notes" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="Alert">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="MinorThresholdCount" type="xs:int" minOccurs="0" default="0" />
+            <xs:element name="MajorThresholdCount" type="xs:int" minOccurs="0" default="0" />
+            <xs:element name="Message" type="xs:string" minOccurs="0" default="" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestCaseList">
+    <xs:sequence>
+      <xs:element name="TestCase" type="TestCase" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PlanSummary">
+    <xs:sequence>
+      <xs:element name="PlanId" type="xs:int" />
+      <!--xs:element name="Name" type="xs:string" minOccurs="0" default="" /-->
+      <xs:element name="PlanType" type="PlanType" minOccurs="0" default="Cruncher" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PulseSchedule">
+    <xs:sequence>
+      <xs:element name="Period" maxOccurs="unbounded" type="SchedulePeriod" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CCMCampaign">
+    <xs:sequence>
+      <xs:element name="RunFor" type="RunFor" />
+      <xs:element name="Schedule" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="ResetInterval" type="FrequencyUnit" />
+            <xs:element name="Period" maxOccurs="unbounded" type="SchedulePeriod" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CruncherCampaign">
+    <xs:sequence>
+      <xs:element name="ConcurrentPorts" type="xs:int" />
+      <xs:element name="RunFor" type="RunFor" />
+      <xs:element name="RampUpTime" type="TimeUnitSeconds" />
+      <xs:element name="MaxCaps" type="xs:float" />
+      <xs:element name="TestCaseDistributionProfile" type="TestCaseDistributionProfile" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PulseCampaign">
+    <xs:sequence>
+      <xs:element name="ConcurrentPorts" type="xs:int" />
+      <xs:element name="Frequency" type="FrequencyUnit" />
+      <xs:element name="MaxCaps" type="xs:float" />
+      <xs:element name="TestCaseDistributionProfile" type="TestCaseDistributionProfile" />
+      <xs:element name="Schedule" minOccurs="0" type="PulseSchedule" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PulseOutboundCampaign">
+    <xs:sequence>
+      <xs:element name="ConcurrentPorts" type="xs:int" />
+      <xs:element name="RunFor" type="RunFor" />
+      <xs:element name="Frequency" type="FrequencyUnit" />
+      <xs:element name="MaxCaps" type="xs:float" />
+      <xs:element name="TestCaseDistributionProfile" type="TestCaseDistributionProfile" />
+      <xs:element name="Schedule" minOccurs="0" type="PulseSchedule" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="OutboundCampaign">
+    <xs:sequence>
+      <xs:element name="ConcurrentPorts" type="xs:int" />
+      <xs:element name="RunFor" type="RunFor" />
+      <xs:element name="MaxCaps" type="xs:float" />
+      <xs:element name="TestCaseDistributionProfile" type="TestCaseDistributionProfile" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ReplayCampaign">
+    <xs:sequence>
+      <xs:element name="ConcurrentPorts" type="xs:int" />
+      <xs:element name="MaxCaps" type="xs:float" />
+      <xs:element name="TestCaseDistributionProfile" type="TestCaseDistributionProfile" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BehaviourSummary">
+    <xs:sequence>
+      <xs:element name="BehaviourId" type="xs:int" />
+      <xs:element name="Name" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="BehaviourType" type="BehaviourType" minOccurs="0" default="Voice" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="AgentSummary">
+    <xs:sequence>
+      <xs:element name="AgentId" type="xs:int" />
+      <xs:element name="Name" type="xs:string" minOccurs="0" default="" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ServerSummary">
+    <xs:sequence>
+      <xs:element name="ServerId" type="xs:int" />
+      <xs:element name="Name" type="xs:string" minOccurs="0" default="" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="AgentBehaviour">
+    <xs:sequence>
+      <xs:element name="Agent" type="AgentSummary" />
+      <xs:element name="Behaviour" type="BehaviourSummary" minOccurs="0" />
+      <xs:element name="Server" type="ServerSummary" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="AgentBehaviourList">
+    <xs:sequence>
+      <xs:element name="AgentBehaviour" type="AgentBehaviour" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Campaign">
+    <xs:sequence>
+      <xs:element name="CampaignId" type="xs:int" nillable="true" />
+      <xs:element name="Name" type="xs:string" />
+      <xs:element name="Description" type="xs:string" minOccurs="0" default="" />
+      <xs:element name="RequestedRunDate" type="UtcDateTime" nillable="true" />
+      <xs:element name="ScheduledRunDate" type="UtcDateTime" nillable="true" />
+      <xs:element name="LastRunDate" type="UtcDateTime" nillable="true" />
+      <xs:element name="Status" type="CampaignStatus" minOccurs="0" default="None" />
+      <xs:element name="CCM" type="CCMCampaign" minOccurs="0" />
+      <xs:element name="Cruncher" type="CruncherCampaign" minOccurs="0" />
+      <xs:element name="CruncherLite" type="CruncherCampaign" minOccurs="0" />
+      <xs:element name="Outbound" type="OutboundCampaign" minOccurs="0" />
+      <xs:element name="Pulse" type="PulseCampaign" minOccurs="0" />
+      <xs:element name="PulseOutbound" type="PulseOutboundCampaign" minOccurs="0" />
+      <xs:element name="Replay" type="ReplayCampaign" minOccurs="0" />
+      <xs:element name="Plan" type="PlanSummary" minOccurs="0" />
+      <xs:element name="TestCaseList" type="TestCaseProbabilityList" minOccurs="0" />
+      <xs:element name="AgentBehaviourList" type="AgentBehaviourList" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SkillLevel">
+    <xs:sequence>
+      <xs:element name="Level" type="xs:string" />
+      <xs:element name="Skill" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="AgentStatus">
+    <xs:sequence>
+      <xs:element name="AgentId" type="xs:int" />
+      <xs:element name="Name" type="xs:string" />
+      <xs:element name="Status" type="xs:string" />
+      <xs:element name="Duration" type="TimeSpan" />
+      <xs:element name="CallsReceived" type="xs:int" />
+      <xs:element name="Behaviour" type="xs:string" />
+      <xs:element name="SkillList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Skill" type="SkillLevel" minOccurs="1" maxOccurs="unbounded" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestCaseBreakdown">
+    <xs:sequence>
+      <xs:element name="TestCase" type="TestCaseSummary" />
+      <xs:element name="Percentage" type="Percentage" />
+      <xs:element name="Calls" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ResultSummary">
+    <xs:sequence>
+      <xs:element name="Result" type="ResultType" />
+      <xs:element name="Number" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+
+
+
+
+  <xs:element name="AgentBehaviourList" type="AgentBehaviourList" />
+  <xs:element name="Campaign" type="Campaign" />
+  <xs:element name="CampaignRunSummary" type="CampaignRunSummary" />
+  <xs:element name="TestCase" type="TestCase" />
+  <xs:element name="TestCaseList" type="TestCaseList" />
+  <xs:element name="CampaignRun" type="CampaignRun" />
+  <xs:element name="TestCaseResult" type="TestCaseResult" />
+  <xs:element name="TestCaseResult2" type="TestCaseResult2" />
+
+  <xs:element name="CampaignTests">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="TestCaseList" type="TestCaseProbabilityList" minOccurs="0" />
+        <xs:element name="AgentBehaviourList" type="AgentBehaviourList" minOccurs="0" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="TestCaseSummaryList" type="TestCaseSummaryList" />
+  <xs:element name="AgentSummaryList">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Agent" type="AgentSummary" minOccurs="1" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="CyaraXmlImportResultList">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="CyaraXmlImportResult" type="CyaraXmlImportResult" minOccurs="1" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="CyaraXmlItemResultList">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="CyaraXmlItemResult" type="CyaraXmlItemResult" minOccurs="1" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>  
+  
+  <xs:element name="BehaviourSummaryList">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Behaviour" type="BehaviourSummary" minOccurs="1" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+
+  <xs:element name="CampaignRunSummaryResults">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Name" type="xs:string" />
+        <xs:element name="RunId" type="xs:int" />
+        <xs:element name="StartDate" type="UtcDateTime" nillable="true" />
+        <xs:element name="EndDate" type="UtcDateTime" nillable="true" />
+        <xs:element name="AgentStatusList" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="AgentStatus" type="AgentStatus" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="TestCaseBreakdownList" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="TestCaseBreakdown" type="TestCaseBreakdown" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="ResultSummaryList" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="ResultSummary" type="ResultSummary" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="TestCaseTicket">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Ticket" type="GUID" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

@@ -1,0 +1,11 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.CallRouting.CallRoutingStatusViewData
+
+<div class="legend">
+    <h4>@Html.Resource(Model.Title, DateTime.UtcNow.FormatToUtcDateTimeLong())</h4>
+    <p>@Html.Resource("StatusCreatedOn"): @Model.CreatedOn</p>
+    <p>@Html.Resource("StatusCreatedBy"): @Model.CreatedBy</p>
+    <p>@Html.Resource("Status"): @Model.Status</p>
+    <p>@Html.Resource("StatusValidationMessages"): @Model.Validation</p>
+</div>

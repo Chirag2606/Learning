@@ -1,0 +1,449 @@
+﻿@using Cyara.Shared.Web.Authorisation
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@using Cyara.Web.Portal.Models
+@using JQChart.Web.Mvc
+@model Cyara.Web.Portal.Models.PlatformPortUsageViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+}
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+    @{
+        Html.RenderPartial("ServerTimeUtc");
+    }
+}
+
+@helper RenderTab(string chartId, PlatformPortUsageDetailViewData tabContent)
+{
+    <div class="porttooltip">
+        <div class="bottom-align">
+            <span>@Html.Resource("AveragePorts")</span> <span class="js-averagePortsTitle">@Model.AveragePortsTitle</span>: <b><span class="js-averagePortsUsage@(chartId)">@tabContent.AveragePorts</span></b>
+        </div>
+
+        @if (Model.ShowLive)
+        {
+            var usedPorts = tabContent.PortUsage.Last().Ports;
+            <div class="pip outer"></div>
+            <div class="pip inner"></div>
+            <div class="box">
+                <b>
+                    <span class="js-livePortsUsed@(chartId)">@usedPorts</span>@Html.Resource("PortsUsed") &nbsp; &nbsp;
+                    <span class="js-livePortsFree@(chartId)">@(tabContent.AvailablePorts - usedPorts)</span>@Html.Resource("PortsFree")
+                    <span class="tag"><b class="js-liveFadeInOut@(chartId)">@Html.Resource("Live")</b></span>
+                </b>
+            </div>
+        }
+    </div>
+
+    @(Html.JQChart()
+        .Chart(tabContent.PortUsage)
+        .ID(chartId + "Chart")
+        .Width("100%")
+        .Height(400)
+        .Border(b => b.Visible(false))
+        .ChartAreaBackground(config =>
+        {
+            var lg = config.LinearGradient();
+            lg.ColorStops(cs => { cs.Add(0, "#274658"); cs.Add(1, "#0C1A22"); });
+            lg.StartPoint(0, 0);
+            lg.EndPoint(0, 1);
+        })
+        .Legend(b => b.Visible(false))
+        .Tooltips(tooltips =>
+        {
+            tooltips.TooltipsType(TooltipsType.Shared);
+        })
+        .Crosshairs(el =>
+        {
+            el.Enabled(true)
+                .VerticalLine(line => line.StrokeStyle("#DCDCDC"))
+                .HorizontalLine(false);
+        })
+        .Shadows(false)
+        .MouseInteractionMode(MouseInteractionMode.Zooming)
+        .Axes(axis =>
+        {
+            var dateTimeAxis = axis.DateTimeAxis(Location.Bottom)
+                .ZoomEnabled(false)
+                .Labels(l =>
+                {
+                    l.StringFormat(Model.ChartDateTimePattern);
+                    l.Interval(1);
+                    l.HorizontalAlignment(HorizontalAlignment.Center);
+                    l.ShowLastLabel(false);
+                })
+                .ZoomEnabled(!Model.ShowLive)
+                .MajorGridLines(gl =>
+                {
+                    gl.StrokeStyle("rgba(220,220,220,0.2)");
+                    gl.Interval(1);
+                })
+                .MajorTickMarks(tm => tm.Visible(false))
+                .IntervalType(Model.AxisIntervalType)
+                .SkipEmptyDays(false);
+
+            if (!Model.ShowLive)
+            {
+                dateTimeAxis.VisibleMinimum(tabContent.AxisMinimum);
+                dateTimeAxis.VisibleMaximum(tabContent.AxisMaximum);
+            }
+
+            axis.LinearAxis(Location.Left)
+                .MajorGridLines(gl =>
+                {
+                    gl.StrokeStyle("rgba(220,220,220,0.2)");
+                    gl.Interval(tabContent.PortsAxisLabelsInterval);
+                })
+                .Interval(tabContent.PortsAxisLabelsInterval)
+                .VisibleMinimum(0)
+                .VisibleMaximum(tabContent.PortsAxisMaximum)
+                .Labels(l =>
+                {
+                    l.Interval(tabContent.PortsAxisLabelsInterval);
+                    l.ShowLastLabel(false);
+                });
+        })
+        .SelectionRectangle(el => el.FillStyle("rgba(125,125,125,0.2)")
+                                    .StrokeStyle("gray")
+                                    .LineWidth(1))
+        .Series(series =>
+        {
+            series.Area()
+                .StrokeStyle("#2390B6")
+                .LineWidth(2)
+                .FillStyle("rgba(20,149,195, 0.12)")
+                .Title(Html.ReportingGlobalResource("Ports", "Sessions"))
+                .XValues(el => el.Connected)
+                .YValues(el => el.Ports)
+                .Markers(false);
+
+            if (Model.ShowLive)
+            {
+                series.Line()
+                    .StrokeStyle("#F45462")
+                    .FillStyle("white")
+                    .XValues(new[] { tabContent.PortUsage.Last().Connected })
+                    .YValues(new[] { tabContent.PortUsage.Last().Ports })
+                    .ErrorBars(c => c.StrokeStyle("#F45462").CapLength(0).DisplayType(ErrorBarStyle.Lower).CalculationType(ErrorBarType.FixedValue).Value(tabContent.PortUsage.Last().Ports))
+                    .Markers(false);
+
+                series.Line()
+                    .StrokeStyle("#F45462")
+                    .FillStyle("white")
+                    .XValues(new[] { tabContent.PortUsage.Last().Connected })
+                    .YValues(new[] { tabContent.PortUsage.Last().Ports })
+                    .ErrorBars(c => c.StrokeStyle("#F45462").CapLength(0).DisplayType(ErrorBarStyle.Upper).CalculationType(ErrorBarType.FixedValue).Value(tabContent.PortsAxisMaximum - tabContent.PortUsage.Last().Ports))
+                    .Markers(true);
+            }
+        })
+        .Render()
+    )
+}
+
+@section PageContent
+{
+    <div class="overlap-tabs form-nogap">
+        <ul class="page-tabs">
+            @if (Html.HasAccess(ResourceType.PlatformPortUsageReport, AccessType.Read))
+            {
+                foreach (var chart in Model.Details)
+                {
+                     <li><a href="#" data-target="@chart.TabName">@chart.TabCaption</a></li>
+                 }
+            }
+        </ul>
+        <div class="clearfix"></div>
+
+        @foreach (var chart in Model.Details)
+        {
+            <div class="form" id="@chart.TabName" style="display: none">
+                <div class="boxed boxed-inner no-top-border">
+                    <div class="row-fluid">
+                        <div class="span12" id="@(chart.TabName)Container">
+                            @RenderTab(chart.TabName, chart)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        
+        @if (Model.Details.Any())
+        {
+            <div class="form always-visible">
+                <div class="boxed-bottom">
+                    <div class="row-fluid">
+                        @using (Html.BeginForm("PortUsage", "report", null, FormMethod.Post, new { id = "platformPortUsageForm" }))
+                        {
+                            @Html.AntiForgeryToken()
+
+                            <div class="form always-visible form-top tab-body">
+                                <div class="row-fluid">
+                                    <div class="span" style="width: 250px">
+                                        <div class="control-group">
+                                            @Html.LabelForWithRequired(m => m.DateRange, new { @class = "control-label" })
+                                            <div class="controls">
+                                                @Html.DropDownListFor(m => m.DateRange, Model.DateRangeTypes)
+                                                @Html.ValidationMessageFor(m => m.DateRange)
+                                                @Html.HiddenFor(m => m.DateRange, new { Name = "submittedDateRange" })
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="span" style="width: 200px">
+                                        <div class="control-group">
+                                            @Html.LabelForWithRequired(m => m.From, new { @class = "control-label" })
+                                            <div class="controls">
+                                                <div id="@(Html.IdFor(m => m.From))Picker" class="input-append">
+                                                    @Html.TextBoxFor(m => m.From, new { @class = "input-datetime", data_format = Model.DatePattern, Value = Model.FromPicker })
+                                                    <span class="add-on">
+                                                        <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                                                    </span>
+                                                </div>
+                                                @Html.ValidationMessageFor(m => m.From)
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="span" style="width: 200px">
+                                        <div class="control-group">
+                                            @Html.LabelForWithRequired(m => m.To, new { @class = "control-label" })
+                                            <div class="controls">
+                                                <div id="@(Html.IdFor(m => m.To))Picker" class="input-append">
+                                                    @Html.TextBoxFor(m => m.To, new { @class = "input-datetime", data_format = Model.DatePattern, Value = Model.ToPicker })
+                                                    <span class="add-on">
+                                                        <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                                                    </span>
+                                                </div>
+                                                @Html.ValidationMessageFor(m => m.To)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row-fluid">
+                                    <button type="submit" class="btn btn-primary js-submit">@Html.GlobalResource("RefreshReport")</button>
+                                    <button type="submit" class="btn js-export">@Html.GlobalResource("ExportView")</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    
+    @if (Model.Details.Any())
+    {
+<script type="text/javascript">
+
+        $(function() {
+
+            $('#@(Html.IdFor(m => m.From))Picker').datetimepicker({ pickTime: true, pick12HourFormat: false, incrementHoursLabel: "@Html.GlobalResource("IncrementHoursLabel")", incrementMinutesLabel: "@Html.GlobalResource("IncrementMinutesLabel")", incrementSecondsLabel: "@Html.GlobalResource("IncrementSecondsLabel")", decrementHoursLabel: "@Html.GlobalResource("DecrementHoursLabel")", decrementMinutesLabel: "@Html.GlobalResource("DecrementMinutesLabel")", decrementSecondsLabel: "@Html.GlobalResource("DecrementSecondsLabel")" });
+            $('#@(Html.IdFor(m => m.To))Picker').datetimepicker({ pickTime: true, pick12HourFormat: false, incrementHoursLabel: "@Html.GlobalResource("IncrementHoursLabel")", incrementMinutesLabel: "@Html.GlobalResource("IncrementMinutesLabel")", incrementSecondsLabel: "@Html.GlobalResource("IncrementSecondsLabel")", decrementHoursLabel: "@Html.GlobalResource("DecrementHoursLabel")", decrementMinutesLabel: "@Html.GlobalResource("DecrementMinutesLabel")", decrementSecondsLabel: "@Html.GlobalResource("DecrementSecondsLabel")" });
+
+            $('button.js-export')
+                .on('click',
+                    function(e) {
+                        $('#platformPortUsageForm').attr('action', '@Url.Action("PortUsageExport")');
+                    });
+            $('button.js-submit')
+                .on('click',
+                    function(e) {
+                        $('#platformPortUsageForm').attr('action', '@Url.Action("PortUsage")');
+                    });
+
+            $('#@Html.IdFor(m => m.DateRange)')
+                .change(function(evt) {
+                    var val = $('#@Html.IdFor(m => m.DateRange)').val();
+
+                    if (val == '@DateRange.Custom') {
+                        if ($('#@(Html.IdFor(m => m.From))').prop("disabled") === true) {
+                            $('#@(Html.IdFor(m => m.From))Picker').data("datetimepicker").enable();
+                            $('#@(Html.IdFor(m => m.To))Picker').data("datetimepicker").enable();
+                        }
+                    } else {
+                        $('#@(Html.IdFor(m => m.From))Picker').data("datetimepicker").disable();
+                        $('#@(Html.IdFor(m => m.To))Picker').data("datetimepicker").disable();
+
+                        $('#@(Html.IdFor(m => m.From))Picker').data("datetimepicker").setValue(null);
+                        $('#@(Html.IdFor(m => m.To))Picker').data("datetimepicker").setValue(null);
+
+                        $.ajax({
+                            url: '@Url.Action("GetDateRange", new { id = "repl_id" })'.replace(/repl_id/gi, val),
+                            data: null,
+                            contentType: 'application/json',
+                            type: "POST",
+                            success: function(response) {
+                                if (response.isSuccess) {
+                                    $('#@(Html.IdFor(m => m.From))Picker')
+                                        .data("datetimepicker")
+                                        .setValue(response.data.from);
+                                    $('#@(Html.IdFor(m => m.To))Picker')
+                                        .data("datetimepicker")
+                                        .setValue(response.data.to);
+                                }
+                            }
+                        });
+                    }
+                });
+
+            $('#@Html.IdFor(m => m.DateRange)').trigger("change");
+
+            var allCharts = [];
+
+            @foreach (var chart in Model.Details)
+            {
+                <text>
+                    var chartTab = {
+                        name: '@chart.TabName',
+                        wrapper: new jqChartWrap({
+                            container: '#@(chart.TabName)Container',
+                            chart: '#@(chart.TabName)Chart',
+                            chartDateTimePattern: '@Model.ChartDateTimePattern',
+                            enableTooltips: true,
+                            tooltipFormatter: function(chartWrap) {
+                                $(chartWrap._args.chart)
+                                    .bind('tooltipFormat',
+                                        function(e, data) {
+                                            var chartDateTimePattern = '@Model.TooltipDateFormat';
+                                            var tooltip = "";
+
+                                            var series = $.isArray(data) ? data[0] : data;
+                                            if (typeof series.chart != 'undefined') {
+                                                var date = series.chart.stringFormat(series.x, chartDateTimePattern);
+                                                var ports =
+                                                    typeof series.value == "undefined" ? series.y : series.value;
+
+                                                tooltip = '<b>' +
+                                                    ports +
+                                                    " @Html.Resource("PortsUsed")</b><br />" +
+                                                    date;
+                                            }
+
+                                            return tooltip;
+                                        });
+                            }
+                        })
+                    };
+
+                    allCharts.push(chartTab);
+                </text>
+            }
+
+            PageTabs.registerHandler(
+                function(target) {
+                    for (var index = 0; index < allCharts.length; index++) {
+                        if (target === allCharts[index].name) {
+                            allCharts[index].wrapper.scaleChart();
+                        }
+                    }
+                });
+
+            $('#' + allCharts[0].name).trigger('click');
+
+            // initial countdown (delay) after full page refresh is double the value, because auto raised tab click will reduce it
+            var dataUpdateCountdown = 30;
+
+            $('.page-tabs a')
+                .on('click',
+                    function(e) {
+                        dataUpdateCountdown = dataUpdateCountdown - 15;
+                    });
+
+            function liveUpdate(tabName) {
+
+                var chartId = '#{0}Chart'.format(tabName);
+
+                // do nothing if not visible
+                if (!$(chartId).is(':visible')) {
+                    return;
+                }
+
+                dataUpdateCountdown--;
+
+                $('.js-liveFadeInOut' + tabName).fadeOut('slow').fadeIn('slow'); // "LIVE" label animation
+
+                // prepare pointers to data we need to update later
+                var axes = $(chartId).jqChart('option', 'axes');
+                var series = $(chartId).jqChart('option', 'series');
+
+                if (dataUpdateCountdown <= 0) {
+
+                    // set counter back to initial delay
+                    dataUpdateCountdown = 15;
+
+                    $.ajax({
+                            url: '@Url.Action("GetPortUsage", "Platform")?tabName={0}'.format(tabName),
+                            type: 'POST',
+                            contentType: "application/x-www-form-urlencoded",
+                            data: $('#platformPortUsageForm').serialize()
+                        })
+                        .done($.proxy(function(data) {
+                                if (data
+                                    .isSuccess &&
+                                    data.value.portsAxisMaximum > 0 &&
+                                    $.isArray(data.value.portUsage) &&
+                                    data.value.portUsage.length > 0) {
+
+                                    // prepare arrays
+                                    var pastDataArray = [];
+                                    data.value.portUsage.forEach(function(entry) {
+                                        var date = new Date(entry.connected);
+                                        var utcDate = new Date(date.getUTCFullYear(),
+                                            date.getUTCMonth(),
+                                            date.getUTCDate(),
+                                            date.getUTCHours(),
+                                            date.getUTCMinutes(),
+                                            date.getUTCSeconds());
+                                        pastDataArray.push([utcDate, entry.ports]);
+                                    });
+
+                                    var liveDataArray = [];
+                                    liveDataArray.push([
+                                        pastDataArray[pastDataArray.length - 1][0],
+                                        pastDataArray[pastDataArray.length - 1][1]
+                                    ]);
+
+                                    // update data
+                                    series[0].data = pastDataArray;
+                                    series[1].data = liveDataArray;
+                                    series[1].errorBars.value = data.value.portsAxisMaximum;
+                                    series[1].errorBars.displayType = 1;
+                                    series[2].data = liveDataArray;
+                                    series[2].errorBars.value = data.value.portsAxisMaximum;
+                                    series[2].errorBars.displayType = 2;
+                                    axes[1].visibleMaximum = data.value.portsAxisMaximum;
+                                    axes[1].majorGridLines.interval = data.value.portsAxisLabelsInterval;
+                                    axes[1].interval = data.value.portsAxisLabelsInterval;
+                                    axes[1].labels.interval = data.value.portsAxisLabelsInterval;
+                                    $(chartId).jqChart('update');
+
+                                    // update port usage and avialability
+                                    $('.js-livePortsUsed' + tabName).text(liveDataArray[0][1]);
+                                    $('.js-livePortsFree' + tabName)
+                                        .text(data.value.availablePorts - liveDataArray[0][1]);
+                                    $('.js-averagePortsUsage' + tabName).text(data.value.averagePorts);
+                                }
+                            },
+                            this));
+                }
+            };
+
+            @if (Model.ShowLive)
+            {
+                <text>
+                    window.setInterval(liveUpdate, 1500, "platform");
+                    window.setInterval(liveUpdate, 1500, "cruncherLite");
+                </text>
+            }
+        });
+
+</script>
+    }
+}

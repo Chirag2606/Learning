@@ -1,0 +1,169 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Resources
+@model Cyara.Web.Portal.Areas.Report.Models.AccountPortUsageViewModel
+
+@helper RenderErrorMessage(string title, string message)
+{
+    <div class="cyara-alert">
+        <div class="top-right warning">
+            <span class="info-triangle red"></span>
+        </div>
+        <h5>@title</h5>
+        @message
+    </div>
+}
+
+@helper RenderGrid()
+{
+    <div class="form tab-body">
+        
+        <div class="cyara-alert" style="display: none" id="realTimeError">
+            <div class="top-right warning">
+                <span class="info-triangle red"></span>
+            </div>
+            <h5>@Html.Resource("Warning")</h5>
+            <span id="realTimeErrorMessage"></span>
+        </div>
+
+        <table id="statsgrid" class="table table-striped">
+            <colgroup>
+                <col style="width: 30px" />
+                <col style="width: 30px" />
+                <col />
+                <col style="width: 10%" />
+                <col style="width: 10%" />
+                <col style="width: 10%" />
+                <col style="width: 10%" />
+                <col style="width: 10%" />
+                <col style="width: 10%" />
+                <col style="width: 10%" />
+            </colgroup>
+            <thead>
+                <tr class="realtime-grid-row">
+                    <th><input class="realtime-grid-filter" type="checkbox" data-campaign-id="all" /></th>
+                    <th></th>
+                    <th>@Html.GlobalResource("TableHeading_RunningCampaigns")</th>
+                    <th>@Html.GlobalResource("TableHeading_PlanType")</th>
+                    <th>@Html.GlobalResource("TableHeading_Reserved")</th>
+                    <th>@Html.GlobalResource("TableHeading_Dialling")</th>
+                    <th>@Html.GlobalResource("TableHeading_Connected")</th>
+                    <th>@Html.GlobalResource("TableHeading_Aborting")</th>
+                    <th>@Html.GlobalResource("TableHeading_PostCallProcessing")</th>
+                    <th>@Html.GlobalResource("TableHeading_Caps")</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <script id="stats-template-row" type="text/x-tmpl">
+        <tr class="realtime-grid-row">
+            <td><input class="realtime-grid-filter" type="checkbox" data-campaign-id="{%= o.campaignId %}"/></td>
+            <td class="realtime-grid-legend"><canvas class="realtime-grid-legend" data-style-index="{%= o.styleIndex %}"></canvas></td>
+            {% if(o.isTotal) { %}
+            <td style="font-weight: bold">{%= o.campaignName %}</td>
+            <td></td>
+            {% } else { %}
+            <td>{%= o.campaignName %}</td>
+            <td>{%= o.planType %}</td>
+            {% } %}
+            <td>{%= o.reserved %}</td>
+            <td>{%= o.dialling %}</td>
+            <td>{%= o.connected %}</td>
+            <td>{%= o.aborted %}</td>
+            <td>{%= o.postCallProcessing %}</td>
+            <td>{%= o.caps %}</td>
+        </tr>
+    </script>
+
+    <script type="text/javascript">
+        $(function() {
+            var rtpu = new RealTimePortUsage({
+                accountId:  @(Model.SelectedAccountId ?? -1),
+                dataSourceUrl: '@Url.Action("RealTimePortUsage")',
+                failedRequestMessage: '@Html.Resource("FailedRequest").ToJavascriptSafeString()',
+                totalsString: '@Html.Resource("AllCampaigns").ToJavascriptSafeString()',
+                chartContainer: 'campaignsContainer',
+                chartDateTimePattern: 'HH:MM',
+                totalConnectedSelector: "span.js-realTimePortsUsedCampaigns",
+                requestFrequencyMsecs: @(Model.RealTimePortUsageWebSettings.PollFrequencySeconds * 1000),
+                dateIntervalInMinutes: @(Model.RealTimePortUsageWebSettings.GraphDurationMinutes),
+                timeAxisCaption: '@Html.Resource("TimeAxisCaption").ToJavascriptSafeString()',
+                portsAxisCaption: '@Html.Resource("PortsAxisCaption").ToJavascriptSafeString()',
+                capsAxisCaption: '@Html.Resource("CapsAxisCaption").ToJavascriptSafeString()',
+                chartIdPorts: 'statsChartPorts',
+                chartIdCaps: 'statsChartCaps'
+            });
+
+            $('#campaign-tab').on('shown', function (e) {
+                if (rtpu.wrapperPorts != null) {
+                    rtpu.wrapperPorts.scaleChart();
+                }
+                if (rtpu.wrapperCaps != null) {
+                    rtpu.wrapperCaps.scaleChart();
+                }
+            });
+
+            PageTabs.registerHandler(
+                function(target) {
+                    if (target == "@Labels.Campaigns") {
+                        if (rtpu.wrapperPorts != null) {
+                            rtpu.wrapperPorts.scaleChart();
+                        }
+                        if (rtpu.wrapperCaps != null) {
+                            rtpu.wrapperCaps.scaleChart();
+                        }
+                    }
+                });
+
+            function animateLiveTag() {
+                $('.js-liveFadeInOutCampaigns').fadeOut(2000).fadeIn(2000); // "LIVE" label animation
+            }
+
+            animateLiveTag();
+            window.setInterval(animateLiveTag, 4000);
+        });
+
+    </script>
+}
+
+<div class="boxed boxed-inner no-top-border">
+    <div class="row-fluid">
+        <div id="campaignsContainer" class="span12">
+            <div class="porttooltip">
+                <div class="pip outer"></div>
+                <div class="pip inner"></div>
+                <div class="box">
+                    <b>
+                        <span class="js-realTimePortsUsedCampaigns">0</span>Connected
+                        <span class="tag"><b class="js-liveFadeInOutCampaigns" style="display: inline;">LIVE</b></span>
+                    </b>
+                </div>
+            </div>
+            <div id="statsChartPorts"></div>
+
+            <div class="porttooltip">
+                <div class="pip outer"></div>
+                <div class="pip inner"></div>
+                <div class="box">
+                    <b>
+                        <span class="js-realTimeCapsUsedCampaigns">0</span>
+                        <span class="tag"><b class="js-liveFadeInOutCampaigns" style="display: inline;">LIVE</b></span>
+                    </b>
+                </div>
+            </div>
+            <div id="statsChartCaps"></div>
+        </div>
+    </div>
+</div>
+
+@if ((Model.SelectedAccountId ?? -1) <= 0)
+{
+    @RenderErrorMessage(Html.Resource("ActionRequired"), Html.Resource("PleaseSelectAccount"));
+}
+else
+{
+    @RenderGrid();
+}

@@ -1,0 +1,160 @@
+﻿@{
+    ViewBag.Title = Html.Resource("Title");
+}
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.AccountsListViewModel
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+    @Html.ActionLinkIfPermitted(Html.Resource("CreateAccount"), "create", "account", null, new { @class = "btn " }, false)
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <table id="accountsgrid" class="is-responsive-table table table-striped table-hover finger">
+            <colgroup>
+                <col style="width: 96px!important"/>
+                <col style="width: 150px!important"/>
+                <col style="width: auto"/>
+                <col />
+                <col style="width: 64px"/>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th data-sort="@Columns.AccountId"><a href="#">@Html.GlobalResource("TableHeading_AccountId")</a></th>
+                    <th data-sort="@Columns.AccountName"><a href="#">@Html.GlobalResource("TableHeading_AccountName")</a></th>    
+                    <th class="responsive-table-padding"></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var account in Model.Accounts)
+                {
+                    <tr data-accountid="@account.AccountId" class="@Html.RenderConditional(Model.ChosenAccountId == account.AccountId, new HtmlString("active"), null)">
+                        <td>@Html.RenderConditional(
+                                account.Active, 
+                                null, 
+                                new HtmlString("<span class=\"label label-important\">{0}</span>".FormatWith(Html.GlobalResource("Inactive"))))
+                        <td>@account.AccountId</td>
+                        <td><a href="#" title="@Html.Resource("Choose")">@account.Name</a></td>
+                        <td class="responsive-table-padding"></td>
+                        <td>
+                            <div class="actions">
+                                    @if (Html.HasActionPermission("Edit", "Account"))
+                                    {
+                                        <button class="btn" data-commandargument="@account.AccountId">
+                                            @Html.GlobalResource("Edit")
+                                        </button>
+                                    }
+                                    else if (Html.HasActionPermission("Show", "Account"))
+                                    {
+                                        <button class="btn" data-commandargument="@account.AccountId">
+                                            @Html.GlobalResource("View")
+                                        </button>
+                                    }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @using(Html.BeginForm("Choose", "Account", FormMethod.Post, new { id = "accountChooseForm", style="display:none" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.ChosenAccountId)
+        }
+    </div>
+    
+    <script id="template-row" type="text/x-tmpl">
+        <tr data-accountid="{%=o.accountId %}" {% if (o.accountId === chosenAccountId) { %}class="active"{% } %}>
+            <td>{% if (o.active === false) { %}<span class="label label-important">@Html.GlobalResource("Inactive")</span>{% } %}</td>
+            <td>{%=o.accountId %}</td>
+            <td><a href="#" title="@Html.Resource("Choose")">{%=o.name %}</a></td>
+            <td class="responsive-table-padding"></td>
+            <td>
+                <div class="actions">
+                    @if (Html.HasActionPermission("Edit", "Account"))
+                    {
+                        <button class="btn" data-commandargument="{%=o.accountId %}">
+                            @Html.GlobalResource("Edit")
+                        </button>
+                    }
+                    else if (Html.HasActionPermission("Show", "Account"))
+                    {
+                        <button class="btn" data-commandargument="{%=o.accountId %}">
+                            @Html.GlobalResource("View")
+                        </button>
+                    }
+                </div>
+            </td>
+        </tr>
+    </script>
+    
+    <script type="text/javascript">
+
+        var chosenAccountId = @(Model.ChosenAccountId ?? -1);
+
+        $(function() {
+            var grid = new AjaxGrid({
+                dataSourceUrl: '@Url.Action("list", "Account", new { area = "admin" })',
+                table: '#accountsgrid',
+                totalPages: @Model.TotalPages,
+                collectionSize: @Model.CollectionSize,
+                pageSize: @Model.PageSize,
+                pageNumber: @Model.PageNumber,
+                sortColumn: '@Model.SortColumn.ToJavascriptSafeString()',
+                sortAscending: @Model.SortAscending.ToString().ToLower(),
+                rowTemplate: 'template-row',
+                recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()',
+                ignoreActiveClick: true
+            });
+
+            $("#accountsgrid").bind("AjaxGrid_PageLoad", function() {
+                var selectedAccountId = $('#@Html.IdFor(m => m.SelectedAccountId)').val();
+                if (selectedAccountId && selectedAccountId.length > 0) {
+                    var tr = $("#accountsgrid tr[data-accountid=" + selectedAccountId +"]");
+                    if (tr.length > 0) {
+                        grid.setActive(tr);
+                    }
+                }
+            });
+
+            $(document).on('click', '#accountsgrid tbody', function(e) {
+                e.preventDefault();
+                var $me = $(e.target);
+                var $row = $me.closest('tr');
+                var aid = $row.attr('data-accountid');
+                var selectedAccountId = $('#@Html.IdFor(m => m.SelectedAccountId)').val();
+
+                var goEdit = function() {
+                    location.href = '@(Html.HasActionPermission("Edit", "Account") ? Url.Action("edit") : Url.Action("show"))';
+                };
+
+                var editAction = e.target.tagName == "BUTTON";
+
+                if (editAction && aid == selectedAccountId) {
+                    goEdit();
+                    return;
+                }
+
+                PageSpinner.show();
+
+                var currentSort = grid.getCurrentSort();
+
+                // change account
+                document.location = '@Html.Raw(Url.Action("Choose", "Account", new { id="replace_id", area="admin", sortColumn = "replace_column", sortAscending = "replace_order" }))'.replace("replace_id", aid).replace("replace_column", currentSort.sortColumn).replace("replace_order", currentSort.sortAscending);
+            });
+        });
+
+    </script>
+}

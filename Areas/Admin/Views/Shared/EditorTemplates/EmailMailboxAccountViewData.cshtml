@@ -1,0 +1,11 @@
+﻿@model Cyara.Web.Portal.Areas.Admin.Models.EmailMailboxAccountViewData
+
+@Html.HiddenFor(m => m.AccountId)
+@Html.HiddenFor(m => m.EmailAddress)
+@Html.HiddenFor(m => m.MailboxAccountId)
+@Html.HiddenFor(m => m.MailboxPassword)
+@Html.HiddenFor(m => m.MailboxUsername)
+
+@Html.ValidationMessageFor(x => x.EmailAddress)
+@Html.ValidationMessageFor(x => x.MailboxPassword)
+@Html.ValidationMessageFor(x => x.MailboxUsername)

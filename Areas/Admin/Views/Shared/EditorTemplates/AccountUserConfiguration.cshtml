@@ -1,0 +1,162 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal
+@model Cyara.Web.Portal.Areas.Admin.Models.AccountUsersViewModel
+
+<div class="form-grid">
+
+    <table id="usersgrid" class="is-responsive-table table truncated table-striped table-hover finger" @Html.Raw(Model.Collection.Any() == false? "style='display:none'" : null)>
+        <colgroup>
+            <col style="width: 80px!important"/>
+            <col style="width: 20px!important"/>
+            <col style="width: 200px" data-responsive-width/>
+            <col style="width: 200px" data-responsive-width/>
+            <col style="width: 200px" data-responsive-width/>
+            <col style="width: 150px!important"/>
+        </colgroup>
+        <thead>
+            <tr>
+                <th></th>
+                <th></th>
+                <th data-sort="Username"><a href="#">@Html.GlobalResource("TableHeading_Username")</a></th>
+                <th data-sort="Lastname"><a href="#">@Html.GlobalResource("TableHeading_Surname")</a></th>    
+                <th data-sort="Firstname"><a href="#">@Html.GlobalResource("TableHeading_Firstname")</a></th>
+                <th data-sort="Telephone"><a href="#">@Html.GlobalResource("TableHeading_Phone")</a></th>
+                <th class="responsive-table-padding"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.Collection)
+            {
+                <tr data-userid="@user.UserId">
+                    <td>@Html.RenderConditional(user.Active, null, new HtmlString("<span class=\"label label-important\">{0}</span>".FormatWith(Html.GlobalResource("Inactive"))))
+                    <td>@Html.RenderConditional(
+                            user.IsLockedOut,
+                            new HtmlString("<i class=\"icon-lock\"></i>"),
+                            null)</td>
+                    <td class="delete-label truncate keep-whitespace-wrap">@Html.ActionLinkIfPermitted(user.Username, "edit", "user", new { id = user.UserId }, null)</td>
+                    <td class="truncate">@user.Lastname</td>
+                    <td class="truncate">@user.Firstname</td>
+                    <td class="truncate">@user.Telephone</td>
+                    <td class="responsive-table-padding"></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    
+</div>
+
+<script id="template-attach-user-popup" type="text/x-tmpl">
+    
+    <div class="input-append">   
+        <form class="attach-user-form">
+            @Html.TextBox("SearchTermInput", "", new { placeholder = @Html.Resource("SearchTerm"), @class = "input-xlarge", id="SearchTermInput" })
+            <button type="button" class="btn attach-user-js-search">@Html.GlobalResource("Search")</button>
+            <button type="button" class="btn attach-user-js-reset">@Html.GlobalResource("Reset")</button>            
+            @Html.Hidden("SearchTerm", "", new { id = "SearchTerm" });
+        </form>
+    </div>
+    
+    <table id="attachUsersGrid" class="table truncated table-striped table-hover finger" style="width:700px">
+        <colgroup>
+            <col style="width: 40%"/>
+            <col style="width: 20%"/>
+            <col style="width: 20%"/>
+            <col style="width: 20%"/>
+        </colgroup>
+        <thead>
+            <tr>
+                <th data-sort="@(Columns.Username)"><a href="#">@Html.GlobalResource("TableHeading_Username")</a></th>
+                <th data-sort="@(Columns.Surname)"><a href="#">@Html.GlobalResource("TableHeading_Surname")</a></th>    
+                <th data-sort="@(Columns.Firstname)"><a href="#">@Html.GlobalResource("TableHeading_Firstname")</a></th>
+                <th data-sort="@(Columns.Telephone)"><a href="#">@Html.GlobalResource("TableHeading_Phone")</a></th>
+            </tr>
+        </thead>
+        <tbody>
+            
+        </tbody>
+    </table>
+
+</script>
+
+<script id="template-attach-user-row" type="text/x-tmpl">
+    <tr data-userId="{%= o.userId %}">
+        <td class="truncate keep-whitespace-wrap" title="{%= o.username %}">{%= o.username %}</td>
+        <td class="truncate" title="{%= o.lastname %}">{%= o.lastname %}</td>
+        <td class="truncate" title="{%= o.firstname %}">{%= o.firstname %}</td>
+        <td class="truncate" title="{%= o.telephone %}">{%= o.telephone %}</td>
+    </tr>
+</script>
+
+
+<script id="template-usersrow" type="text/x-tmpl">
+    <tr data-userid="{%=o.userId %}"">
+        <td>{% if (o.active === false) { %}<span class="label label-important">@Html.GlobalResource("Inactive")</span>{% } %}</td>
+        <td>{% if (o.isLockedOut === true) { %}<i class="icon-lock"></i>{% } %}</td>
+        <td class="delete-label truncate keep-whitespace-wrap">@Html.ContentBlockIfPermitted(new HtmlString("<a href=\"" + @Url.Action("edit", "user") + "/{%=o.userId %}\">{%=o.username %}</a>"), new HtmlString("{%=o.username %}"), "edit", "user")</td>
+        <td class="truncate">{%=o.lastname %}</td>
+        <td class="truncate">{%=o.firstname %}</td>
+        <td class="truncate">{%=o.telephone %}</td>
+        <td class="responsive-table-padding"></td>
+    </tr>
+</script>
+    
+<script type="text/javascript">
+
+    $(function() {
+        var editAccountUsers = new EditAccountUsers({
+            dataSourceUrl: '@Url.Action("ListUsers", "Account", new { area = "admin" })',
+            table: '#usersgrid',
+            totalPages: @Model.TotalPages,
+            collectionSize: @Model.CollectionSize,
+            pageSize: @Model.PageSize,
+            pageNumber: @Model.PageNumber,
+            sortColumn: '@Model.SortColumn.ToJavascriptSafeString()',
+            sortAscending: @Model.SortAscending.ToString().ToLower(),
+            rowTemplate: 'template-usersrow',
+            recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()',
+            canDelete: @Html.HasActionPermission("delete", "user").ToString().ToLower(),
+            detachOrDeleteUrl: '@Url.Action("DetachOrDelete", "User", new { area = "admin" })',
+            deleteHeader: '@Html.Resource("DeleteModalHeader").ToJavascriptSafeString()',
+            deleteBody: '@Html.Resource("DeleteUserModalBody").ToJavascriptSafeString()',
+            deleteButtonCaption: '@Html.GlobalResource("Delete").ToJavascriptSafeString()',
+            deleteUserUrl: '@Url.Action("delete", "user")',
+            detachHeader: '@Html.Resource("DetachModalHeader").ToJavascriptSafeString()',
+            detachBody: '@Html.Resource("DetachUserModalBody").ToJavascriptSafeString()',
+            detachButtonCaption: '@Html.GlobalResource("Detach").ToJavascriptSafeString()',
+            detachUserUrl: '@Url.Action("detach", "user")',
+            choiceHeader: '@Html.Resource("ChoiceHeader").ToJavascriptSafeString()',
+            choiceBody: '@Html.Raw(Html.Resource("ChoiceModalBody").ToJavascriptSafeString())',
+            choiceCustomButtons: '<button class="btn btn-primary js-delete">@Html.GlobalResource("Delete").ToJavascriptSafeString()</button> <button class="btn btn-primary js-detach">@Html.GlobalResource("Detach").ToJavascriptSafeString()</button>',
+            afterDeleteUrl: '@Url.Action("users", "account", new { messageId = "User_Delete" })',
+            afterDetachUrl: '@Url.Action("users", "account", new { messageId = "User_Detach" })',
+            deleteToolTip: '@Html.Resource("DeleteTooltip").ToJavascriptSafeString()'
+        });
+
+        var attachUserPopup = new AttachUserPopup({
+            popupHeader: '@Html.Resource("AttachUserHeading").ToJavascriptSafeString()',
+            buttonCaption: '@Html.Resource("AttachUser").ToJavascriptSafeString()',
+            attachUserButton: 'a.attach-user',
+            attachUserForm: '.attach-user-form',
+            searchTermInput: '#SearchTermInput',
+            searchTermForGrid: '#SearchTerm',
+            popupTemplate: 'template-attach-user-popup',
+            dataSourceUrl: '@Url.Action("ListUsersForAttach", new { area = "admin" })',
+            userGrid: '#attachUsersGrid',
+            pageSize: @MvcApplication.Settings.DefaultAltPageSize,
+            sortColumn: '@Columns.Username.ToJavascriptSafeString()',
+            recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()',
+            pleaseSelectMessage: ".noSelectionMessage",
+            pleaseSelectMessageHtml: '@( MvcHtmlString.Create(("<span class='error-text noSelectionMessage' style='display:none'>" + Html.Resource("PleaseSelectUser") + "</span>").ToJavascriptSafeString()))',
+            attachUserUrl: '@Url.Action("AttachUser", new { area = "admin" })',
+            onSuccessfulAttach: function() {
+                $("#usersgrid").show();
+                $(".paginate", $("#usersgrid").parent()).show();
+                editAccountUsers.refreshUsersGrid();
+            }
+        });
+    });
+
+</script>

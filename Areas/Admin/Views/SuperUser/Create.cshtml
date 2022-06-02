@@ -1,0 +1,59 @@
+﻿@{
+    ViewBag.Title = Html.Resource("Title");
+}
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.SiteMap
+@using MvcSiteMapProvider.Web.Html
+@model Cyara.Web.Portal.Areas.Admin.Models.SuperUserEditViewModel
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+}
+
+@section Breadcrumbs
+{
+    @Html.MvcSiteMap().GenerateBreadcrumbs(new[] { Url.Action("Index"), Url.Action("Create") })
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <div class="form">
+            @using (Html.BeginForm("create", "SuperUser", FormMethod.Post, new { id = "createsuperuser" }))
+            {
+                @Html.AntiForgeryToken()
+
+                @Html.EditorForModel()
+
+                <div class="form-actions">
+                    @Html.ErrorPanel(Model.Message)
+                    <button type="submit" class="btn btn-primary btn-submit">@Html.GlobalResource("SaveDetails")</button>
+                    @Html.ActionLink(Html.GlobalResource("Cancel"), "index", "SuperUser", null, new { @class = "btn" })
+                </div>
+            }
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(function () {
+
+            @if (Model.LoginProvider.ConcatenateFirstAndLastName())
+            {
+                @:  var generator = new UserNameGenerator({ strategy: 'firstlast', firstname: '#@Html.IdFor(m => m.FirstName)', surname: '#@Html.IdFor(m => m.LastName)', username: '#@Html.IdFor(m => m.Username)' })
+            }
+
+            @if (Model.LoginProvider.UsernameIsEmail())
+            {
+                @:  var generator = new UserNameGenerator({ strategy:'email', email: '#@Html.IdFor(m => m.Email)', username: '#@Html.IdFor(m => m.Username)' })
+            }
+
+            var dirtyHandler = new DirtyPageHandler({ form: '#createsuperuser' });
+        });
+    </script>
+}

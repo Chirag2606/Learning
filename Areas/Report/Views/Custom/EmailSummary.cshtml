@@ -1,0 +1,139 @@
+﻿@using Cyara.Domain.Types.Common
+@using Cyara.Domain.Types.Plan
+@using Cyara.Domain.Types.Shared
+@using Cyara.Domain.Types.TestCase
+@using Cyara.Domain.Types.TestResult
+@using Cyara.Shared.Types.Storage
+@using Cyara.Shared.Types.TestCase
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@using Cyara.Web.Portal.Core.Script
+@model Cyara.Web.Portal.Areas.Report.Models.ExecuteCustomReportViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+    Layout = "~/Views/Shared/_BaseLayout.cshtml";
+}
+
+@section Head
+{
+    <script type="text/javascript">
+        __cyara.resources = new Resources();
+        __cyara.types = {};
+        __cyara.types.@Html.Raw(Export.Enum<FolderType>());
+        __cyara.types.@Html.Raw(Export.Enum<EntityType>());
+        __cyara.types.@Html.Raw(Export.Enum<ExchangeType>());
+        __cyara.types.@Html.Raw(Export.Enum<MeanOpinionScore>());
+        __cyara.types.@Html.Raw(Export.Enum<CallFlow>());
+        __cyara.types.@Html.Raw(Export.Enum<PlanType>());
+        __cyara.types.@Html.Raw(Export.Enum<MediaType>());
+        __cyara.instances = {};
+    </script>
+}
+
+<div id="page-body" class="container">
+    <h1>@Model.ReportName</h1>
+    <br/>
+    <div>
+        @Html.Partial("~/Areas/Report/Views/Shared/Filters.cshtml", Model)
+        <div class="boxed-divider"></div>
+        <div class="boxed pageblock">
+            <h4>@Html.ReportingResource("HeaderTotalCalls", "HeaderTotalSessions")</h4>
+            <div class="row-fluid">
+                <div class="span6">
+                    <div class="pull-left">
+                        <div id="ReportSummaryDataArea" style="width: 350px;"></div>
+                    </div>
+
+                    <div class="pull-left">
+                        @if (Model != null && Model.TestResultSummaries != null)
+                        {
+                            <table id="ReportSummaryData" style="display: none" data-calls-label="@Html.ReportingGlobalResource("TotalCalls", "TotalSessions")">
+                                @foreach (var testResultSummary in Model.TestResultSummaries)
+                                {
+                                    <tr>
+                                        <th scope="row" data-type="label">@testResultSummary.ResultType.ToLabel()</th>
+                                        <td data-type="data">@testResultSummary.Number</td>
+                                        <td data-type="colourCode" class="legend-colour label @testResultSummary.ResultType.ToString().ToLower()"></td>
+                                        <td data-type="link">@Url.Action(@testResultSummary.ResultType.ToActionName(), new {routeAccountId = Model.SelectedAccountId, id = Model.ReportId, timestamp = Model.ViewLoaded})</td>
+                                    </tr>
+                                }
+                            </table>
+                            <div class="pull-right">
+                                <table class="legend-grid">
+                                    @foreach (var testResultSummary in Model.TestResultSummaries)
+                                    {
+                                        <tr>
+                                            <td data-type="colour" title="@testResultSummary.Percent%"><span class="@testResultSummary.ResultType.ToString().ToLower() label legend-colour">&nbsp;</span></td>
+                                            <td data-type="label">@testResultSummary.ResultType.ToLabel()</td>
+                                        </tr>
+                                    }
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="boxed" id="customresultsgrid">
+            <h2 aria-label="@Html.GlobalResource("Details")"></h2>
+            <table id="reportsgrid" class="table table-striped table-hover finger truncated">
+                <colgroup>
+                    <col/>
+                    <col/>
+                    <col style="width: 80px"/>
+                    <col style="width: 80px"/>
+                    <col style="width: 90px"/>
+                    <col style="width: 80px"/>
+                    <col style="width: 90px"/>
+                    <col style="width: 80px"/>
+                </colgroup>
+                <thead style="display: table-header-group;">
+                <tr>
+                    <th class="result-cell"></th>
+                    <th>@Html.GlobalResource("TableHeading_TestCase")</th>
+                    <th>@Html.GlobalResource("TableHeading_Total")</th>
+                    <th>@ResultType.Success.ToLabel()</th>
+                    <th>@ResultType.Satisfactory.ToLabel()</th>
+                    <th>@ResultType.Failed.ToLabel()</th>
+                    <th>@Html.GlobalResource("TableHeading_SuccessPercentage")</th>
+                    <th>@Html.GlobalResource("TableHeading_Severity")</th>
+                </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.TestCases.Collection)
+                    {
+                        <tr data-customReportId="@item.Id" style="page-break-inside: avoid">
+                            <td class="result-cell @item.ResultStatus"></td>
+                            <td class="wrap js-name">@item.PathAndName</td>
+                            <td class="truncate">@item.Total</td>
+                            <td class="truncate">@item.Success</td>
+                            <td class="truncate">@item.Satisfactory</td>
+                            <td class="truncate">@item.Failed</td>
+                            <td class="truncate">@item.SuccessRate</td>
+                            <td><span class="label @item.SeverityStatus" style="text-shadow: none;">@item.SeverityLabel</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(function() {
+        var chart = new ReportChart({
+            dataTableName: 'ReportSummaryData',
+            chartTableName: 'ReportSummaryDataArea',
+            generateColours: false,
+            enableLinks: true,
+            enablePopovers: false,
+            popoverHandler: null
+        });
+
+        if (typeof evoPdfConverter != "undefined") {
+            evoPdfConverter.startConversion();
+        }
+    });
+</script>

@@ -1,0 +1,197 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.Notification.TemplatesViewData
+
+<div class="boxed-grid boxed-grid-inner">
+    <div class="input-prepend input-append control-group">
+        @Html.TextBox("SearchTemplatesInput", "", new { placeholder = @Html.Resource("SearchTemplatesInput"), @class = "input-xlarge", id = "SearchTemplatesInput" })
+        @Html.HiddenFor(m => m.SearchTerm)
+        <button type="button" class="btn templates-js-search">@Html.GlobalResource("Search")</button>
+        <button type="button" class="btn templates-js-reset">@Html.GlobalResource("Reset")</button>
+    </div>
+    @Html.ValidationMessageFor(m => m.SearchTerm)
+
+    <table id="templatesgrid" class="table table-striped table-hover finger" style="table-layout: fixed;">
+        <colgroup>
+            <col style="width: 20%" />
+            <col style="width: 20%" />
+            <col style="width: 60%" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th data-sort="@Columns.Name"><a href="#">@Html.GlobalResource("TableHeading_TemplateName")</a></th>
+                <th data-sort="@Columns.Subject"><a href="#">@Html.GlobalResource("TableHeading_EmailSubject")</a></th>
+                <th>@Html.GlobalResource("TableHeading_Message")</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.Collection)
+            {
+                <tr data-templateId="@row.TemplateId">
+                    <td class="js-deleteLabel truncate" title="@row.TemplateName"><a href="#">@row.TemplateName</a></td>
+                    <td class="truncate" title="@row.Subject">@row.Subject</td>
+                    <td class="truncate" title="@row.MessageBody">@row.MessageBody</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="boxed-divider bottom-gap-small"></div>
+    <div class="js-template-actions">
+        <button id="loadAsNewMessage" type="button" class="btn btn-primary">@Html.Resource("LoadAsNewMessage")</button>
+    </div>
+</div>
+
+<script id="template-of-template-row" type="text/x-tmpl">
+    <tr data-templateId="{%= o.templateId %}">
+        <td class="js-deleteLabel truncate" title="{%= o.templateName %}"><a href="#">{%= o.templateName %}</a></td>
+        <td class="truncate" title="{%= o.subject %}">{%= o.subject %}</td>
+        <td class="truncate" title="{%= o.messageBody %}">{%= o.messageBody %}</td>
+    </tr>
+</script>
+
+<script type="text/javascript">
+    $(function() {
+
+        var templates = new AjaxGrid({
+            dataSourceUrl: '@Url.Action("ListTemplates", "Notification")',
+            table: '#templatesgrid',
+            totalPages: @Model.TotalPages,
+            collectionSize: @Model.CollectionSize,
+            pageSize: @Model.PageSize,
+            pageNumber: @Model.PageNumber,
+            sortColumn: '@Model.SortColumn.ToJavascriptSafeString()',
+            sortAscending: @Model.SortAscending.ToJavaScript(),
+            rowTemplate: 'template-of-template-row',
+            recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()',
+            enableRefresh: true,
+            autoClickLink: false,
+            requestPreProcessor: function(request) {
+                request.@(Html.NameFor(m => m.SelectedAccountId)) = $('#SelectedAccountId').val() || '';
+                request.@(Html.NameFor(m => m.SearchTerm)) = $("#@Html.IdFor(m => m.SearchTerm)").val();
+            }
+        }, this);
+
+        var templatesTrash = new GridRowTrash({
+            table: '#templatesgrid',
+            deleteToolTip: '@Html.Resource("DeleteTooltip").ToJavascriptSafeString()',
+            modalHeader: '@Html.Resource("DeleteHeader").ToJavascriptSafeString()',
+            constructEntity: function(row, grid) {
+                var name = '"' + $('td.js-deleteLabel', row).text() + '"';
+                return { name: name, key: null };
+            },
+            clickHandler: function(key, row, grid) {
+                templates.showSpinner();
+                var templateId = row.attr('data-templateId');
+                $.post('@Url.Action("DeleteTemplate", "Notification")/{0}'.format(templateId), function(data) {
+                    if (data.isSuccess) {
+                        ShowMessage.Success('@Html.Resource("Template_Deleted").ToJavascriptSafeString()');
+                        templates.refresh();
+                    } else {
+                        ShowMessage.Error('@Html.Resource("Template_DeleteFailed").ToJavascriptSafeString()');
+                    }
+                });
+                PageSpinner.hide();
+            }
+        });
+
+        PageTabs.registerHandler(function(target) {
+            if (target === "templates") {
+                templates.refresh();
+            } else {
+                templatesTrash.hideAllStickyCells();
+            }
+        });
+
+        // emulate "Search" button click on Enter key press
+        $("#SearchTemplatesInput").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $('button.templates-js-search').click();
+            }
+        });
+
+        // reset the search and sorting back to defaults
+        $('button.templates-js-reset').click($.proxy(function() {
+            templates.setCurrentSort('@Model.SortColumn.ToJavascriptSafeString()', @Model.SortAscending.ToJavaScript());
+            templates.setNumberOfSelected(0);
+            $('#SearchTemplatesInput').val('').text('');
+            $('#@Html.IdFor(m => m.SearchTerm)').val('').text('');
+            $('button.templates-js-search').click();
+        }, this));
+
+        // filter grid content based on 'searchTerm' content
+        $('button.templates-js-search').on('click', $.proxy(function() {
+            $('#@Html.IdFor(m => m.SearchTerm)').val($('#SearchTemplatesInput').val());
+            PageSpinner.show();
+            templates.setPage(1);
+            templates.refresh();
+            PageSpinner.hide();
+        }, this));
+
+        var currentlySelectedTemplate = {
+            templateId: null,
+            subject: null,
+            message: null
+        };
+
+        function clearSelectedTemplate() {
+            currentlySelectedTemplate.templateId = null;
+            currentlySelectedTemplate.subject = null;
+            currentlySelectedTemplate.message = null;
+        }
+
+        // enable button on highligh of a template
+        $('#templatesgrid').bind('ClickRowHandler_Activate', $.proxy(function (e, row) {
+            $("#loadAsNewMessage").prop("disabled", false);
+            var cells = $("td", row);
+            currentlySelectedTemplate.templateId = $(row).attr("data-templateId");
+            currentlySelectedTemplate.subject = $(cells[1]).attr("title");
+            currentlySelectedTemplate.message = $(cells[2]).attr("title");
+        }, this));
+
+        // disable on deactivate
+        $('#templatesgrid').bind('ClickRowHandler_Deactivate', $.proxy(function () {
+            $("#loadAsNewMessage").prop("disabled", true);
+            clearSelectedTemplate();
+        }, this));
+
+        $('#templatesgrid').bind('AjaxGrid_PageLoad', $.proxy(function() {
+            $("#loadAsNewMessage").prop("disabled", true);
+
+            if (currentlySelectedTemplate.templateId) {
+                var row = $("tr[data-templateId='" + currentlySelectedTemplate.templateId + "']", $("#templatesgrid"));
+                if (row.length > 0) {
+                    row.click();
+                } else {
+                    clearSelectedTemplate();
+                }
+            }
+        }, this));
+
+        $("#loadAsNewMessage").click(function() {
+            Notifications.getInstance().confirmPopulatingNewMessageWithTemplateData(
+                '@Html.Resource("OverwriteHeader").ToJavascriptSafeString()',
+                '@Html.Resource("OverwriteBody").ToJavascriptSafeString()',
+                function() {
+                    Notifications.getInstance().loadTemplateAsNewMessage(currentlySelectedTemplate.subject, currentlySelectedTemplate.message);
+                });
+        });
+
+        $(document)
+            .on('click',
+                'table#templatesgrid tbody a',
+                function(e) {
+                    e.preventDefault();
+                    var templateId = $(e.target).closest('tr').attr('data-templateId');
+                    var modal = new ModalAjaxForm({
+                        actionButton: '@Html.GlobalResource("Save").ToJavascriptSafeString()',
+                        formUrl: '@Url.Action("Template", new { id = -1 })'.replace('-1', templateId),
+                        title: '@Html.Resource("UpdateTemplateHeader").ToJavascriptSafeString()',
+                        onHide: function() {
+                            templates.refresh();
+                        }
+                    });
+                });
+    });
+</script>

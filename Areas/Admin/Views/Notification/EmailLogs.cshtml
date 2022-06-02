@@ -1,0 +1,263 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Shared.Types.Notification
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.Notification.EmailLogsViewData
+
+<div class="boxed-grid boxed-grid-inner">
+    <div class="input-prepend input-append control-group">
+        @Html.TextBox("SearchEmailLogsInput", "", new { placeholder = @Html.Resource("SearchTerm"), @class = "input-xlarge", id = "SearchEmailLogsInput" })
+        @Html.HiddenFor(m => m.SearchTerm, new { id = "SearchEmailLogsHidden" })
+        <button type="button" class="btn emaillogs-js-search">@Html.GlobalResource("Search")</button>
+        <button type="button" class="btn emaillogs-js-reset">@Html.GlobalResource("Reset")</button>
+    </div>
+    @Html.ValidationMessageFor(m => m.SearchTerm)
+
+    <table id="emaillogsgrid" class="is-responsive-table table table-striped table-hover finger" style="table-layout: fixed;">
+        <colgroup>
+            <col style="width: 200px!important"/>
+            <col style="width: auto"/>
+            <col style="width: 100px!important" />
+            <col style="width: 80px!important"/>
+        </colgroup>
+        <thead>
+        <tr>
+            <th data-sort="@Columns.Date"><a href="#">@Html.GlobalResource("TableHeading_DateUTC")</a></th>
+            <th data-sort="@Columns.Subject"><a href="#">@Html.GlobalResource("TableHeading_EmailSubject")</a></th>
+            <th>@Html.GlobalResource("TableHeading_Attachments")</th>
+            <th data-sort="@Columns.Status"><a href="#">@Html.Resource("Status")</a></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var logRow in Model.Logs)
+        {
+            <tr data-emaillogId="@logRow.LogId" data-emailResult="@logRow.Result">
+                <td class="js-deleteLabel1 truncate">@logRow.Date</td>
+                <td class="js-deleteLabel2">@logRow.Subject</td>
+                <td>
+                    @if (logRow.Attachments != null && logRow.Attachments.Any())
+                    {
+                        @Html.GlobalResource("Yes")
+                        <div class="js-attachments-list" style="display: none">
+                            <ul>
+                                @foreach (var attachment in logRow.Attachments)
+                                {
+                                    <li><a target="_blank" href="@attachment.Url">@attachment.FileName</a></li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        @Html.GlobalResource("No")
+                    }
+                </td>
+                <td>
+                    @switch (logRow.Status)
+                    {
+                        case SendStatus.Failed:
+                            <span class="email-sent-error" title='@Html.Resource("Failed")'></span>
+                            break;
+                        case SendStatus.Sending:
+                            <span class="label satisfactory" title='@Html.Resource("Sending")'>S</span>
+                            break;
+                        case SendStatus.Succeeded:
+                            <span class="email-sent-success" title='@Html.Resource("Success")'></span>
+                            break;
+                        case SendStatus.Unknown:
+                            <span class="label queued" title='@Html.Resource("Queued")'>Q</span>
+                            break;
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div class="boxed-divider" style="display: none"></div>
+    <div class="js-status boxed" style="display: none">
+        <span class="keep-whitespace-wrap"></span>
+    </div>
+</div>
+
+<script id="template-row" type="text/x-tmpl">
+    <tr data-emaillogId="{%=o.logId %}" data-emailResult="{%=o.result %}">
+        <td class="js-deleteLabel1 truncate">{%=o.date %}</td>
+        <td class="js-deleteLabel2">{%=o.subject %}</td>
+        <td>
+            {% if (o.attachments) { %}
+                @Html.GlobalResource("Yes")
+                <div class="js-attachments-list" style="display: none">
+                    <ul>
+                        {% for(var index=0; index < o.attachments.length; index++) { %}
+                        <li><a target="_blank" href="{%= o.attachments[index].url %}">{%= o.attachments[index].fileName %}</a></li>
+                        {% } %}
+                    </ul>
+                </div>
+            {% } else { %}
+                @Html.GlobalResource("No")
+            {% } %}
+        </td>
+        <td>
+            {% if (o.status == @((int)SendStatus.Sending)) { %}<span class="label satisfactory" title='@Html.Resource("Sending")'>S</span>{% } %}
+            {% if (o.status == @((int)SendStatus.Succeeded)) { %}<span class="email-sent-success" title='@Html.Resource("Success")'></span>{% } %}
+            {% if (o.status == @((int)SendStatus.Failed)) { %}<span class="email-sent-error" title='@Html.Resource("Failed")'></span>{% } %}
+            {% if (o.status == @((int)SendStatus.Unknown)) { %}<span class="label queued" title='@Html.Resource("Queued")'>Q</span>{% } %}
+        </td>        
+    </tr>
+</script>
+
+<script type="text/javascript">
+    $(function() {
+
+        var emaillogsGrid = new AjaxGrid({
+            dataSourceUrl: '@Url.Action("ListEmailLogs", "Notification")',
+            table: '#emaillogsgrid',
+            totalPages: @Model.TotalPages,
+            collectionSize: @Model.CollectionSize,
+            pageSize: @Model.PageSize,
+            pageNumber: @Model.PageNumber,
+            sortColumn: '@Model.SortColumn.ToJavascriptSafeString()',
+            sortAscending: @Model.SortAscending.ToString().ToLower(),
+            rowTemplate: 'template-row',
+            recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()',
+            enableRefresh: true,
+            autoClickLink: false,
+            requestPreProcessor: function(request) {
+                request.@(Html.NameFor(m => m.SelectedAccountId)) = $('#SelectedAccountId').val() || '';
+                request.@(Html.NameFor(m => m.SearchTerm)) = $('#SearchEmailLogsHidden').val();
+            }
+        }, this);
+
+        var trash = new GridRowTrash({
+            table: '#emaillogsgrid',
+            deleteToolTip: '@Html.Resource("DeleteTooltip").ToJavascriptSafeString()',
+            modalHeader: '@Html.Resource("DeleteHeader").ToJavascriptSafeString()',
+            constructEntity: function(row, grid) {
+                var name = ' - "' + $('td.js-deleteLabel1', row).text() + ", @Html.Resource("Subject"): " + $('td.js-deleteLabel2', row).text() + '"';
+                return { name: name, key: null };
+            },
+            exclude: function(row) {
+                return $('span.label',row).length;
+            },
+            clickHandler: function(key, row, grid) {
+                emaillogsGrid.showSpinner();
+                var emaillogId = row.attr('data-emaillogId');
+                $.post('@Url.Action("DeleteEmailLog", "Notification")/{0}'.format(emaillogId), function(data) {
+                    if (data.isSuccess) {
+                        ShowMessage.Success('@Html.Resource("EmailLog_Deleted").ToJavascriptSafeString()');
+                        emaillogsGrid.refresh();
+                    } else {
+                        ShowMessage.Error('@Html.Resource("EmailLog_DeleteFailed").ToJavascriptSafeString()');
+                    }
+                });
+                PageSpinner.hide();
+            }
+        });
+
+        PageTabs.registerHandler(function(target) {
+            if (target !== "email-logs") {
+                trash.hideAllStickyCells();
+            } else {
+                trash.showAllStickyCells();
+            }
+        });
+
+        // emulate "Search" button click on Enter key press
+        $("#SearchEmailLogsInput").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $('button.emaillogs-js-search').click();
+            }
+        });
+
+        var currentlySelectedEmailLogId = null;
+
+        // reset the search and sorting back to defaults
+        $('button.emaillogs-js-reset').click($.proxy(function() {
+            emaillogsGrid.setCurrentSort('@Model.SortColumn.ToJavascriptSafeString()', @Model.SortAscending.ToJavaScript());
+            emaillogsGrid.setNumberOfSelected(0);
+            $('#SearchEmailLogsInput').val('').text('');
+            $('#SearchEmailLogsHidden').val('').text('');
+            $('button.emaillogs-js-search').click();
+        }, this));
+
+        // filter grid content based on 'searchTerm' content
+        $('button.emaillogs-js-search').on('click', $.proxy(function() {
+            $('#SearchEmailLogsHidden').val($('#SearchEmailLogsInput').val());
+            PageSpinner.show();
+            emaillogsGrid.setPage(1);
+            emaillogsGrid.refresh();
+            PageSpinner.hide();
+        }, this));
+
+        // to show "send" status, is triggered by the AjaxGrid when a row is activated
+        $('#emaillogsgrid').bind('ClickRowHandler_Activate', $.proxy(function (e, row) {
+            var result = row.attr('data-emailResult');
+            var resultDetail = JSON.parse(result);
+            
+            var $jsStatus = $("div.js-status");
+            $('div.js-attachments-list', $jsStatus).remove();
+
+            $('div.js-status').empty();
+            var resultHtml = '';
+            for (var i = 0; i < resultDetail.logResults.length; i++) {
+                resultHtml += '<p>{0}</p>'.format(resultDetail.logResults[i].reason);
+                if (resultDetail.logResults[i].emailAddresses !== null && resultDetail.logResults[i].emailAddresses.length > 0) {
+                    var list = '';
+                    $.each(resultDetail.logResults[i].emailAddresses,
+                        function() {
+                            list += '<li>{0}</li>'.format(this);
+                        });
+                    resultHtml += '<ul>{0}</ul>'.format(list);
+                }
+                if (resultDetail.logResults[i].detail !== null && resultDetail.logResults[i].detail.length > 0) {
+                    resultHtml += '<p>{0}</p>'.format(resultDetail.logResults[i].detail);
+                }
+            }
+            $('div.js-status').append(resultHtml);
+
+            $jsStatus.append($("div.js-attachments-list", row).clone());
+            $('div.js-attachments-list', $jsStatus).show();
+
+            $('div.boxed-divider').show();
+            $jsStatus.show();
+            currentlySelectedEmailLogId = $(row).attr("data-emaillogid");
+
+            trash.resize();
+
+            ScrollTo('div.js-status', 100);
+        }, this));
+
+        function hideStatusSection() {
+            var $jsStatus = $("div.js-status");
+
+            $('div.js-attachments-list', $jsStatus).remove();
+            $('span', $jsStatus).text('');
+
+            $('div.boxed-divider').hide();
+            $jsStatus.hide();
+        }
+
+        // hide this section on deactivate or reload
+        $('#emaillogsgrid').bind('ClickRowHandler_Deactivate', $.proxy(function () {
+            hideStatusSection();
+            currentlySelectedEmailLogId = null;
+            trash.resize();
+        }, this));
+
+        $('#emaillogsgrid').bind('AjaxGrid_PageLoad', $.proxy(function () {
+            hideStatusSection();
+
+            if (currentlySelectedEmailLogId) {
+                var row = $("tr[data-emaillogid='" + currentlySelectedEmailLogId + "']", $("#emaillogsgrid"));
+                if (row.length > 0) {
+                    row.click();
+                } else {
+                    currentlySelectedEmailLogId = null;
+                }
+            }
+        }, this));
+    });
+</script>
+
+

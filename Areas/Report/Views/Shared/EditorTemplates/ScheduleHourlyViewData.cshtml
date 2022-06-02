@@ -1,0 +1,25 @@
+﻿@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Report.Models.ScheduleHourlyViewData
+
+<div class="control-group">
+    @Html.LabelFor(m => m.EveryHour, new { @class = "control-label" })
+    <div class="controls">
+        @Html.TextBoxFor(m => m.EveryHour, new {@class = "input-mini inline"})
+        @Html.Resource("Hours")
+        @Html.ValidationMessageFor(m => m.EveryHour)
+    </div>
+</div>
+
+<script type="text/javascript">
+    (function () {
+
+        ScheduleReport.getInstance(".js-schedule-pop").addLoadHandler("ScheduleHourlyViewData", function () {
+
+            $("#@Html.IdFor(m => m.EveryHour)").on("change", function () {
+                if (/^[0-9]+$/.test($(this).val())) {
+                    ScheduleReport.getInstance(".js-schedule-pop").post();
+                }
+            });
+        });
+    })();
+</script>

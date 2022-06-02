@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TestCaseSummary>
+  <TestCase>
+    <TestCaseId>1</TestCaseId>
+    <Name></Name>
+    <Active></Active>
+    <FolderPath></FolderPath>
+    <CallFlow></CallFlow>
+    <Description></Description>
+    <CalledNumber></CalledNumber>
+    <PreConnectAudio></PreConnectAudio>
+    <Notes></Notes>
+    <Alert>
+      <MinorThresholdCount></MinorThresholdCount>
+      <MajorThresholdCount></MajorThresholdCount>
+      <Message></Message>
+    </Alert>
+  </TestCase>
+</TestCaseSummary>

@@ -1,0 +1,76 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@model Cyara.Web.Portal.Areas.Report.Models.ScheduleWeeklyViewData
+
+<div class="control-group">
+    @Html.LabelFor(m => m.EveryWeek, new { @class = "control-label" })
+    <div class="controls">
+        @Html.TextBoxFor(m => m.EveryWeek, new {@class = "input-mini inline"})
+        @Html.Resource("Weeks")
+        @Html.ValidationMessageFor(m => m.EveryWeek)
+    </div>
+</div>
+
+<div class="control-group">
+    <div class="controls">
+        @Html.HiddenFor(m => m.RepeatOn)
+        <div class="calendar-table">
+            <table>
+                @{
+                    int day = 0;
+                    <tr>
+                        @for (int col = 0; col < 7; col++)
+                        {
+                            <td
+                                @Html.IsKeyInCommaDelimitedSequence(Model.RepeatOn, day.ToString(), new HtmlString("class=selected-td"), null) 
+                                data-value="@(day)">
+                                @(Cyara.Web.Resources.Common.ResourceManager.GetString("DayOfWeekAbbrev_{0}".FormatWith(day++)).Substring(0, 1))
+                            </td>
+                        }
+                    </tr>
+                }
+            </table>
+        </div>
+        @Html.ValidationMessageFor(m => m.RepeatOn)
+    </div>
+</div>
+
+@{Html.RenderPartial("ScheduleDetailWithEndRepeatViewData", Model); }
+
+<script type="text/javascript">
+    (function () {
+
+        ScheduleReport.getInstance(".js-schedule-pop").addLoadHandler("ScheduleWeeklyViewData", function () {
+
+            $("#@Html.IdFor(m => m.EveryWeek)")
+                .change(function () {
+                    if (/^[0-9]+$/.test($(this).val())) {
+                        ScheduleReport.getInstance(".js-schedule-pop").post();
+                    }
+                });
+
+            $(".calendar-table td")
+                .mousedown(function (event) {
+                    $(this).toggleClass("selected-td");
+                    $("#@Html.IdFor(m => m.RepeatOn)").val(null);
+                    var selected = '';
+                    $(".calendar-table td.selected-td").each(function(i, e) {
+                        selected += $(e).attr('data-value') + ',';
+                    });
+                    $("#@Html.IdFor(m => m.RepeatOn)").val(selected);
+                    ScheduleReport.getInstance(".js-schedule-pop").post();
+                    event.preventDefault();
+                })
+                .mouseover(function() {
+                    $(this).toggleClass("highlighted-td");
+                })
+                .mouseleave(function() {
+                    $(this).toggleClass("highlighted-td");
+                })
+                .bind("selectstart", function() {
+                    return false;
+                });
+        });
+    })();
+</script>

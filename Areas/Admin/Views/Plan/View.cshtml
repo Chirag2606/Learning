@@ -1,0 +1,37 @@
+﻿@{
+    ViewBag.Title = Html.Resource("Title");
+}
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.SiteMap
+@using MvcSiteMapProvider.Web.Html
+@model Cyara.Web.Portal.Areas.Admin.Models.PlanEditViewModel
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"), Model.Name)
+}
+
+@section PageHeadRight
+{
+}
+
+@section Breadcrumbs
+{
+    @Html.MvcSiteMap().GenerateRememberedBreadcrumbsOrDefault(ViewContext, new [] { Url.Action("Index", "Account"), Url.Action("Edit", "Account"), Url.Action("View", new { id=""}) })
+}
+
+
+@section PageContent
+{
+    <div class="overlap">
+        <div class="form">
+            @Html.EditorForModel()
+
+            <div class="form-actions">
+                @Html.ErrorPanel(Model.Message)
+                @Html.LastBreadcrumbOrActionLink(Html.GlobalResource("Cancel"), "edit", "account", null, new { @class = "btn btn-cancel" } )
+            </div>
+        </div>
+    </div>
+}

@@ -1,0 +1,97 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.Notification.NewMessageViewData
+
+<div class="form-control">
+    <div>
+        <table class="account-selector-table table table-hover truncated">
+            <tr>
+                <td>
+                    <input id="idAllAccounts" type="checkbox" name="AllAccounts" data-accountid="All"/>
+                </td>
+                <td>
+                    @Html.Resource("AllAccounts")
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="account-selector-div">
+        <table class="account-selector-table table table-hover truncated">
+            @foreach (var v in Model.Accounts)
+            {
+                <tr>
+                    <td>
+                        <input type="checkbox" name="@Html.NameFor(m=>m.SelectedAccounts)" value="@v.AccountId" data-accountid="@v.AccountId" data-users="@v.Usernames" @Html.RenderConditional(v.Selected, new HtmlString("checked=\"checked\""), null)/>
+                    </td>
+                    <td>
+                        @v.Name
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(function () {
+
+        var updateScreen = function () {
+            var totalAccountCount = $('.account-selector-table input').length - 1;
+            var accountCount = 0;
+            var usersCount = 0;
+            var users = [];
+            $('.account-selector-table input:checkbox:checked').each(function (index, element) {
+                if ($(element).data('accountid') !== "All") {
+                    accountCount++;
+                    $.each($(element).data('users').toString().split(','), function (index, value) {
+                        if (value) {
+                            users[value] = true;
+                        }
+                    });
+                    usersCount = Object.keys(users).length;
+                }
+            });
+
+            if (accountCount > 0) {
+                $("#selectedUsersSummary").html('@Html.Resource("SelectedAccounts")'.format(usersCount, accountCount));
+                $("#@Html.IdFor(m=>m.SendingSummary)").val('@Html.Resource("ReadyToSendTo")'.format(usersCount, accountCount)).valid();
+            } else {
+                $("#selectedUsersSummary").html('@Html.Resource("NoSelection")');
+                $("#@Html.IdFor(m=>m.SendingSummary)").val(null);
+            }
+
+            if (accountCount === totalAccountCount) {
+                $("#idAllAccounts").prop('checked', true);
+            }
+        }
+
+        var allAccounts = $('.account-selector-table input');
+
+        allAccounts.on('click', function(e) {
+            var current = $(e.target);
+            if (current.data('accountid') === "All") {
+                if (current.is(':checked')) {
+                    $(allAccounts).prop('checked', true);
+                } else {
+                    $(allAccounts).prop('checked', false);
+                }
+            } else {
+                $(allAccounts[0]).prop('checked', false);
+            }
+
+            current.parents("form").data("DirtyPageHandler").set_isDirty();
+
+            updateScreen();
+        });
+
+        updateScreen();
+
+        Notifications.registerClearAccountSelection(function() {
+            allAccounts.prop("checked", false);
+            updateScreen();
+            $("#@Html.IdFor(m=>m.SendingSummary)").clearValidation();
+        });
+    });
+
+</script>
+

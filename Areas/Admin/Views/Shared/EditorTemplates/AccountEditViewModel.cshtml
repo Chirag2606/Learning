@@ -1,0 +1,134 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.AccountEditViewModel
+
+<div class="form-head">
+    <div class="pull-right form-head-info">
+        <div class="switch switch-large" data-on="success" data-off="danger" data-on-label="@Html.GlobalResource("Active").ToUpper()" data-off-label="@Html.GlobalResource("Inactive").ToUpper()">
+            @Html.CheckBoxFor(m => m.Active, Model.ReadOnly ? new { disabled =  "disabled"} : null)
+        </div>
+    </div>
+    <h2>@Html.Resource("SubHeading")</h2>
+</div>
+<div class="form-body">
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.Name, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.Name, new { @class = "input-xlarge" })
+            @Html.Tooltip(Html.Resource("AccountNameTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.Name)
+        </div>
+    </div>
+    <div class="row-fluid limit">
+        <div class="control-group span3">
+            @Html.LabelForWithRequired(m => m.Activation, new { @class = "control-label" })
+            <div class="controls">
+                <div id="@(Html.IdFor(m => m.Activation))Picker" class="input-append">
+                    @Html.TextBoxFor(m => m.Activation, new { @class = "input-small", data_format = @Model.DatePattern, @Value = Model.Activation.FormatToPickerDate() })
+                    <span class="add-on">
+                        <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                    </span>
+                </div>
+                @Html.ValidationMessageFor(m => m.Activation)
+            </div>
+        </div>
+        <div class="control-group span5">
+            @Html.LabelForWithRequired(m => m.Expiry, new { @class = "control-label" })
+            <div class="controls">
+                <div id="@(Html.IdFor(m => m.Expiry))Picker" class="input-append">
+                    @Html.TextBoxFor(m => m.Expiry, new { @class = "input-small", data_format = @Model.DatePattern, @Value = Model.Expiry.HasValue ? Model.Expiry.Value.FormatToPickerDate() : string.Empty })
+                    <span class="add-on">
+                        <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                    </span>
+                </div>
+                @Html.ValidationMessageFor(m => m.Expiry)
+                <label class="checkbox inline">
+                    @Html.CheckBoxFor(m => m.NeverExpires)
+                    @Html.LabelFor(m => m.NeverExpires)
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.Country, new { @class = "control-label" })
+        <div class="controls">
+            @Html.DropDownListFor(m => m.Country, Model.Countries)
+            @Html.ValidationMessageFor(m => m.Country)
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.TimeZoneId, new { @class = "control-label" })
+        <div class="controls">
+            @Html.DropDownListFor(m => m.TimeZoneId, Model.Timezones, new { @class = "input-largedouble" })
+            @Html.ValidationMessageFor(m => m.TimeZoneId)
+            @Html.Tooltip(Html.Resource("TimeZoneTip"), Html.GlobalResource("TipLabel"))
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelFor(m => m.NotificationEmail, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.NotificationEmail, new { @class = "input-largedouble" })
+            @Html.Tooltip(Html.Resource("NotificationEmailTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.NotificationEmail)
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelFor(m => m.ReportEmailDomainWhitelist, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.ReportEmailDomainWhitelist, new { @class = "input-largedouble" })
+            @Html.Tooltip(Html.Resource("ReportEmailDomainWhitelistTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessagesFor(m => m.ReportEmailDomainWhitelist)
+        </div>
+    </div>
+
+    <div class="control-group">
+        @Html.LabelFor(m => m.StorageBackend, new { @class = "control-label" })
+        <div class="controls">
+            @Html.DropDownListFor(m => m.StorageBackend, Model.StorageBackends)
+            @Html.Tooltip(Html.Resource("StorageBackendTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.StorageBackend)
+        </div>
+        <div id="StorageBackendChangeWarning" style="display: none" class="alert alert-warning" role="alert">
+            @Html.Resource("StorageBackendChangeWarning")
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    $(function () {
+        $('#@(Html.IdFor(m => m.Activation))Picker').datetimepicker({ pickTime: false, incrementHoursLabel: "@Html.GlobalResource("IncrementHoursLabel")", incrementMinutesLabel: "@Html.GlobalResource("IncrementMinutesLabel")", incrementSecondsLabel: "@Html.GlobalResource("IncrementSecondsLabel")", decrementHoursLabel: "@Html.GlobalResource("DecrementHoursLabel")", decrementMinutesLabel: "@Html.GlobalResource("DecrementMinutesLabel")", decrementSecondsLabel: "@Html.GlobalResource("DecrementSecondsLabel")" });
+        var expiryDatetime = $('#@(Html.IdFor(m => m.Expiry))Picker').datetimepicker({ pickTime: false, incrementHoursLabel: "@Html.GlobalResource("IncrementHoursLabel")", incrementMinutesLabel: "@Html.GlobalResource("IncrementMinutesLabel")", incrementSecondsLabel: "@Html.GlobalResource("IncrementSecondsLabel")", decrementHoursLabel: "@Html.GlobalResource("DecrementHoursLabel")", decrementMinutesLabel: "@Html.GlobalResource("DecrementMinutesLabel")", decrementSecondsLabel: "@Html.GlobalResource("DecrementSecondsLabel")" }).data('datetimepicker');
+
+        var toggleExpired = function(target) {
+            if ($(target).is(':checked')) {
+                expiryDatetime.disable();
+                $('#@Html.IdFor(m => m.Expiry)').val('');
+            } else {
+                expiryDatetime.enable();
+            }
+        };
+        $('#@Html.IdFor(m => m.NeverExpires)').on('click', function (e) {
+            toggleExpired(e.target);
+        });
+        toggleExpired('#@Html.IdFor(m => m.NeverExpires)');
+
+        $('#@Html.IdFor(m => m.StorageBackend)').on('change', function (e) {
+            if (this.value !== '@Model.StorageBackend') {
+                $('#StorageBackendChangeWarning').show();
+            } else {
+                $('#StorageBackendChangeWarning').hide();
+            }
+        });
+    });
+
+</script>
+
+@if (Model.ReadOnly)
+{
+<script type="text/javascript">
+    $(function () {
+        $('input, select, textarea, #upgrade').prop('disabled', true);
+    });
+</script>
+}

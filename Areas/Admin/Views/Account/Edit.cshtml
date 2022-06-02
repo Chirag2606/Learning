@@ -1,0 +1,71 @@
+﻿@{
+    ViewBag.Title = Html.Resource("Title");
+}
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Shared.Web.Models
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.SiteMap
+@using MvcSiteMapProvider.Web.Html
+@model Cyara.Web.Portal.Areas.Admin.Models.AccountEditViewModel
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"), Model.Name)
+}
+
+@section PageHeadRight
+{
+}
+
+@section Breadcrumbs
+{
+    @Html.MvcSiteMap().GenerateBreadcrumbs(new [] { Url.Action("Index"), Url.Action("Edit") })
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <div class="form">
+            @using (Html.BeginForm("edit", "account", FormMethod.Post, new { id = "editaccount" }))
+            {
+                @Html.AntiForgeryToken()
+
+                @Html.EditorForModel()
+
+                @Html.EditorFor(m => m, "AccountTestConfiguration", new { FormSelector = "#editaccount" })
+
+                @Html.EditorFor(m => m, "AccountPlanConfiguration")
+
+                @Html.EditorFor(m => m, "AccountIdentityProvider")
+
+                @Html.HiddenFor(m => m.AccountId)
+            
+                <div class="form-actions">
+                    @Html.ErrorPanel(Model.Message)
+                    @Html.RenderConditional(
+                        (Model.Message != null && Model.Message.Severity == Severity.PageFatal) || Model.ReadOnly, 
+                        null, 
+                        new HtmlString("<button type=\"submit\" class=\"btn btn-primary btn-submit\">{0}</button>".FormatWith(@Html.GlobalResource("SaveDetails"))))
+                    @Html.ActionLinkIfPermitted(Html.GlobalResource("Cancel"), "index", "account", null, new { @class = "btn" }, "index", "home", new { area = "" })
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (ViewData.ModelState.IsValid)
+    { // only executing client side validation if server side validation did not return any errors, otherwise error messages provided by server side validation will not be visible (CP-734)
+        <script type="text/javascript">
+            // to trigger form validation on load
+            $(function() {
+                $('#editaccount').valid();
+            });
+        </script>
+    }
+
+    <script type="text/javascript">
+        $(function() {
+            var dirtyHandler = new DirtyPageHandler({ form: '#editaccount' });
+        });
+    </script>
+}

@@ -1,0 +1,48 @@
+﻿@using Cyara.Domain.Types.Config
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.ConfigurationViewModel
+
+@{
+    var htmlAttribsRegular = new { @class = "input-xxlarge" };
+    var htmlAttribsReadOnly = new { @class = "input-xxlarge", @readonly = "readonly" };
+    var htmlAttribsAppendAddOn = new { @class = "input-addon" };
+    var htmlAttribsAppendAddOnReadOnly = new { @class = "input-addon", @readonly = "readonly" };
+    int index = 0;
+}
+<div class="form-head">
+    <h2>@Html.Resource("SubHeading")</h2>
+</div>
+
+<div id="page-warning" class="alert alert-critical" style="margin-bottom: 0px">
+    <h3>@Html.Resource("PageWarningHead")</h3>
+    <p>@Html.Resource("PageWarningBody")</p>
+</div>
+
+<div class="form-body">
+    @foreach (var setting in Model.Settings)
+    {
+        <div class="control-group">
+            <label for="@("Settings_" + index.ToString() + "__SettingValue")">@setting.SettingLabel</label>
+            <div class="controls">
+                @Html.Hidden(string.Format("Settings[{0}].SettingKey", index), @setting.SettingKey)
+
+                @if (setting.SettingKey == ConfigurationKey.DefaultPsst.Key)
+                {
+                    <div class="input-append">
+                        @Html.TextBox(string.Format("Settings[{0}].SettingValue", index), setting.SettingValue, setting.ReadOnly ? (object)htmlAttribsAppendAddOnReadOnly : (object)htmlAttribsAppendAddOn)
+                        <span class="add-on">@Html.GlobalResource("Secs")</span>
+                    </div>
+                }
+                else
+                {
+                    @Html.TextBox(string.Format("Settings[{0}].SettingValue", index), setting.SettingValue, setting.ReadOnly ? (object)htmlAttribsReadOnly : (object)htmlAttribsRegular)
+                }
+
+                @Html.Tooltip(setting.SettingTooltip, Html.GlobalResource("TipLabel"))
+                @Html.ValidationMessage(setting.SettingKey)
+            </div>
+        </div>
+        index++;
+    }
+</div>

@@ -1,0 +1,309 @@
+﻿@using Cyara.Domain.Types.Plan
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Reflection
+@using Cyara.Domain.Types.Maintenance
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Areas.Admin.Models
+@using Cyara.Web.Portal.Core.Extensions
+@model  Cyara.Web.Portal.Areas.Admin.Models.MaintenanceViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+}
+
+@functions
+{
+
+    string VoiceSchedulerFeatureToString(string feature)
+    {
+        try
+        {
+            PlanType pt = (PlanType)Enum.Parse(typeof(PlanType), feature);
+            return pt.ToDisplay();
+        }
+        catch (Exception)
+        {
+            // Ignored
+        }
+
+        try
+        {
+            var str = Html.Resource("FeatureName_{0}".FormatWith(feature));
+            if (!string.IsNullOrEmpty(str))
+            {
+                return str;
+            }
+        }
+        catch (Exception)
+        {
+            // Ignored
+        }
+
+        return "*** Unknown feature: {0} ***".FormatWith(feature);
+    }
+
+}
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+    <style>
+        .allowed-account {
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        .el-lbl {
+            margin-right: 20px;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+
+        .allowed-account label{
+            display: inline-block;
+        }
+        .allowed-account input{
+            margin: 0;
+            margin-bottom: 10px;
+        }
+
+        .btn.active.green {
+            background-color: #42b142;
+            color: white;
+        }
+    </style>
+}
+
+@section PageHeadRight
+{
+    <div class="textright">&nbsp;</div>
+    @{
+        Html.RenderPartial("ServerTime");
+    }
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <div class="form">
+            <div class="form-head">
+                <h2 class="pull-left">@Html.Resource("PortalMaintenance_SectionHeading")</h2>
+            </div>
+            <form id="editform" method="POST" autocomplete="off">
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.MaintenanceModeForPortal)
+                @foreach (var instanceName in Model.VoiceSchedulerInstances.Keys)
+                {
+                    var copy = instanceName;
+                    @Html.HiddenFor(m => m.VoiceSchedulerInstances[copy].InstanceName)
+                    @Html.HiddenFor(m => m.VoiceSchedulerInstances[copy].MaintenanceMode)
+                }
+
+                <div class="form-body">
+                    <h5>@Html.Raw(Html.Resource("SubHeading"))</h5><br />
+                    <p>@Html.Raw(Html.Resource("ExplanationText"))</p><br />
+
+                    <div>
+                        <div>
+                            <span class="el-lbl">
+                                @Html.Resource("InMaintenanceModeCheckBox")
+                            </span>
+
+                            <div class="radiotabs btn-group" data-for="@Html.IdFor(m => m.MaintenanceModeForPortal)" data-toggle="buttons-radio">
+                                <button type="button" value="false" class="btn @Html.RenderConditional(Model.MaintenanceModeForPortal == false, new HtmlString("active"), null)">@Html.GlobalResource("Inactive")</button>
+                                <button type="button" value="true" class="btn green @Html.RenderConditional(Model.MaintenanceModeForPortal == true, new HtmlString("active"), null)">@Html.GlobalResource("Active")</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-subhead">
+                    <h2 class="pull-left">@Html.Resource("VoiceSchedulerAndCallEngineMaintenance_SectionHeading")</h2>
+                </div>
+                <div class="form-body">
+                    @Html.HiddenFor(m => m.VoiceScheduler.Component)
+                    @Html.Raw(Html.Resource("ExplanationVoiceSchedulerAndCallEngine"))
+                    <div>
+                        <div class="control-group allowed-account">
+                            <div class="controls">
+                                @Html.LabelFor(m => m.VoiceScheduler.LimitedAvailabilityAccounts, new { @class = "el-lbl" })
+                                @Html.TextBoxFor(m => m.VoiceScheduler.LimitedAvailabilityAccounts)
+                                @Html.Tooltip(Html.Resource("LimitedAvailabilityAccountTip"), Html.GlobalResource("TipLabel"))
+                            </div>
+                            @Html.ValidationMessageFor(m => m.VoiceScheduler.LimitedAvailabilityAccounts)
+                        </div>
+                        <div class="bottom-gap-tiny">@Html.Resource("VoiceSchedulersGridCaption")</div>
+                        <table id="voiceschedulermaintenancegrid" class="table table-striped table-hover">
+                            <colgroup>
+                                <col style="width: 20%" />
+                                <col style="width: 20%" />
+                                <col style="width: 30%" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>@Html.Resource("Header_SchedulerId")</th>
+                                    <th>@Html.Resource("Header_LastUpdated")</th>
+                                    <th>@Html.Resource("Header_MaintenanceMode")</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    foreach (var kvp in Model.VoiceSchedulerInstances.OrderBy(x => x.Key))
+                                    {
+                                        var key = kvp.Key;
+                                        var instance = kvp.Value;
+                                        <tr>
+                                            <td>@instance.InstanceName</td>
+                                            <td>@instance.LastUpdated</td>
+                                            <td>
+                                                <div class="radiotabs btn-group" data-for="@Html.IdFor(m => m.VoiceSchedulerInstances[key].MaintenanceMode)" data-toggle="buttons-radio" style="margin-right: 20px;">
+                                                    <button type="button" name="@Html.NameFor(m => m.VoiceSchedulerInstances[key].MaintenanceMode)" value="@MaintenanceMode.Disabled" class="btn @Html.RenderConditional(Model.VoiceSchedulerInstances[key].MaintenanceMode == MaintenanceMode.Disabled, new HtmlString("active"), null)">@Html.GlobalResource("Inactive")</button>
+                                                    <button type="button" name="@Html.NameFor(m => m.VoiceSchedulerInstances[key].MaintenanceMode)" value="@MaintenanceMode.GracefulShutdown" class="btn green @Html.RenderConditional(Model.VoiceSchedulerInstances[key].MaintenanceMode == MaintenanceMode.GracefulShutdown, new HtmlString("active"), null)">@Html.Resource("GracefulShutdown")</button>
+                                                    <button type="button" name="@Html.NameFor(m => m.VoiceSchedulerInstances[key].MaintenanceMode)" value="@MaintenanceMode.LimitedAvailability" class="btn green @Html.RenderConditional(Model.VoiceSchedulerInstances[key].MaintenanceMode == MaintenanceMode.LimitedAvailability, new HtmlString("active"), null)">@Html.Resource("LimtedAvailability")</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <script id="template-component-instance" type="text/x-tmpl">
+                            <tr data-ceid="{%= o.instanceName %}">
+                                <td title="{%= o.instanceName %}">{%= o.instanceName %}</td>
+                                <td title="{%= o.lastUpdated %}">{%= o.lastUpdated %}</td>
+                                <td>
+                                    <div class="maintenanceModeRadioTab btn-group" data-instanceName="{%= o.instanceName %}" data-toggle="buttons-radio" style="margin-right: 20px;">
+                                        <button type="button" name="{%= (o.instanceName + 'MaintenanceMode') %}" value="@((int)MaintenanceMode.Disabled)" class="{%= ('btn ' + (o.maintenanceMode == @((int)MaintenanceMode.Disabled) ? 'active' : '')) %}">@Html.GlobalResource("Inactive")</button>
+                                        <button type="button" name="{%= (o.instanceName + 'MaintenanceMode') %}" value="@((int)MaintenanceMode.GracefulShutdown)" class="{%= ('btn green ' + (o.maintenanceMode == @((int)MaintenanceMode.GracefulShutdown) ? 'active' : '')) %}">@Html.Resource("GracefulShutdown")</button>
+                                        <button type="button" name="{%= (o.instanceName + 'MaintenanceMode') %}" value="@((int)MaintenanceMode.LimitedAvailability)" class="{%= ('btn green ' + (o.maintenanceMode == @((int)MaintenanceMode.LimitedAvailability) ? 'active' : '')) %}">@Html.Resource("LimtedAvailability")</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </script>
+
+                        @Html.HiddenFor(m => m.CallEngineChangesJson)
+
+                        <div class="bottom-gap-tiny">@Html.Resource("CallEnginesGridCaption")<br/>@Html.Resource("CallEnginesGridNote")</div>
+                        <table id="callenginesmaintenancegrid" class="table table-striped table-hover">
+                            <colgroup>
+                                <col style="width: 20%" />
+                                <col style="width: 20%" />
+                                <col style="width: 30%" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th data-sort="@(ReflectOn<InstanceViewData>.GetProperty(p => p.InstanceName).Name.ToCamelCase())"><a href="#">@Html.Resource("Header_CallEngineId")</a></th>
+                                    <th data-sort="@(ReflectOn<InstanceViewData>.GetProperty(p => p.LastUpdatedTicks).Name.ToCamelCase())"><a href="#">@Html.Resource("Header_LastUpdated")</a></th>
+                                    <th data-sort="@(ReflectOn<InstanceViewData>.GetProperty(p => p.MaintenanceMode).Name.ToCamelCase())"><a href="#">@Html.Resource("Header_MaintenanceMode")</a></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="form-subhead">
+                    <h2 class="pull-left">@Html.Resource("VoiceSchedulerFeatures_SectionHeading")</h2>
+                </div>
+                <div class="form-body">
+                    <table id="voiceschedulerfeaturesgrid" class="table table-striped table-hover">
+                        <colgroup>
+                            <col style="width: 20%" />
+                            <col style="width: 80%" />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>@Html.Resource("Header_VoiceSchedulerFeature")</th>
+                                <th>@Html.Resource("Header_VoiceSchedulerSelection")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                foreach (var combo in Model.VoiceSchedulerFeatures.OrderBy(x => VoiceSchedulerFeatureToString(x.Key)))
+                                {
+                                    var c = combo;
+                                    var instancesList = Model.VoiceSchedulerInstances.Keys.OrderBy(x => x).Select(x => new SelectListItem { Text = x, Value = x, Selected = Model.VoiceSchedulerFeatures[c.Key].Equals(x) }).ToList();
+                                    <tr>
+                                        <td>@VoiceSchedulerFeatureToString(combo.Key)</td>
+                                        <td>
+                                            @Html.DropDownListFor(model => model.VoiceSchedulerFeatures[c.Key], instancesList, Html.GlobalResource("Inactive"))
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @*
+        <div class="form-subhead">
+            <h2 class="pull-left">Omni Scheduler Maintenance</h2>
+        </div>
+        <div class="form-body">
+            @Html.HiddenFor(m => m.OmniScheduler.Component)
+            @Html.Raw(Html.Resource("ExplanationOmniScheduler"))
+            <div>
+                <span style="margin-right: 40px; font-weight: bold;">
+                    @Html.Resource("InMaintenanceModeCheckBox")
+                </span>
+                <div class="radiotabs btn-group" data-toggle="buttons-radio">
+                    @Html.HiddenFor(m => m.OmniScheduler.MaintenanceMode)
+                    <button type="button" value="@MaintenanceMode.Disabled" class="btn @Html.RenderConditional(Model.OmniScheduler.MaintenanceMode == MaintenanceMode.Disabled, new HtmlString("active"), null)">@Html.GlobalResource("Inactive")</button>
+                    <button type="button" value="@MaintenanceMode.GracefulShutdown" class="btn green @Html.RenderConditional(Model.OmniScheduler.MaintenanceMode == MaintenanceMode.GracefulShutdown, new HtmlString("active"), null)">@Html.Resource("GracefulShutdown")</button>
+                    <button type="button" value="@MaintenanceMode.LimitedAvailability" class="btn green @Html.RenderConditional(Model.OmniScheduler.MaintenanceMode == MaintenanceMode.LimitedAvailability, new HtmlString("active"), null)">@Html.Resource("LimtedAvailability")</button>
+                </div>
+                <div class="control-group allowed-account">
+                    @Html.LabelFor(m => m.OmniScheduler.LimitedAvailabilityAccounts)
+                    @Html.TextBoxFor(m => m.OmniScheduler.LimitedAvailabilityAccounts)
+                </div>
+                @Html.ValidationMessageFor(m => m.OmniScheduler.LimitedAvailabilityAccounts)
+            </div>
+        </div>
+                *@
+                <div class="form-actions">
+                    @Html.ErrorPanel(Model.Message)
+
+                    <button type="submit" id="saveButton" class="btn btn-primary btn-submit">@Html.GlobalResource("SaveDetails")</button>
+                    @Html.ActionLink(this.Html.GlobalResource("Cancel"), "maintenance", "Platform", null, new { @class = "btn btn-cancel" })
+                    <br />
+                    <br />
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(function () {
+            var dirtyHandler = new DirtyPageHandler({ form: '#editform' });
+            if ($("#page-error").is(":visible")) {
+                dirtyHandler.set_isDirty();
+            }
+
+            $('div.radiotabs').on('click',
+                'button',
+                function(ev) {
+                    var tgt = $(ev.target);
+                    $('#' + tgt.parent().data('for')).val(tgt.val());
+                });
+
+            var ceMaintGrid = new ComponentMaintenanceModeGrid({
+                table: '#callenginesmaintenancegrid',
+                sortColumn: '@(ReflectOn<InstanceViewData>.GetProperty(p => p.InstanceName).Name.ToCamelCase())',
+                sortAscending: true,
+                pageSize: @(Int32.MaxValue),
+                rowTemplate: 'template-component-instance',
+                recordLabel: "@Html.Resource("CallEngineGridRecordLabel")",
+                deleteModalHeader: "@Html.Resource("CallEngineDeleteModalHeader")",
+                dataSource: JSON.parse(@Html.RawJsonString(Model.CallEngineInstances.Values, true)),
+                awaitingCeChanges: JSON.parse(@Html.RawJsonString(Model.CallEngineChangesJson) || null)
+            });
+
+            $("#saveButton").on('click',
+                function(ev) {
+                    $('#@Html.IdFor(m => m.CallEngineChangesJson)').val(JSON.stringify(ceMaintGrid.getSubmitObject()));
+                });
+        });
+    </script>
+}

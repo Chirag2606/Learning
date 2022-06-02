@@ -1,0 +1,20 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.SmsPlanBase
+
+<div class="control-group">
+    @Html.LabelForWithRequired(m => m.Sessions, new { @class = "control-label" })
+    <div class="controls">
+        @Html.TextBoxFor(m => m.Sessions, new { @class = "input-mini" })
+        @Html.Tooltip(Html.Resource("SessionsTooltip"), Html.GlobalResource("TipLabel"))
+        @Html.ValidationMessageFor(m => m.Sessions)
+    </div>
+</div>
+<div class="control-group">
+    @Html.LabelForWithRequired(m => m.MaxAps, new { @class = "control-label" })
+    <div class="controls">
+        @Html.TextBoxFor(m => m.MaxAps, new { @class = "input-mini" })
+        @Html.Tooltip(Html.Resource("MaxApsTooltip"), Html.GlobalResource("TipLabel"))
+        @Html.ValidationMessageFor(m => m.MaxAps)
+    </div>
+</div>

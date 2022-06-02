@@ -1,0 +1,38 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.CallRouting.CallRoutingViewModel
+
+<div class="form-head">
+    <h2>@Html.Resource("SubHeading")</h2>
+</div>
+
+<div id="page-warning" class="alert alert-critical" style="margin-bottom: 0px">
+    <h3>@Html.Resource("PageWarningHead")</h3>
+    <p>@Html.Resource("PageWarningBody")</p>
+</div>
+
+<div class="form-body">
+    
+    @if (Model.LastStatus != null)
+    {
+        Html.RenderPartial("CallRoutingStatusPartial", Model.LastStatus);
+    }
+   
+    @Html.ValidationSummary()
+    
+    <div class="control-group">
+        @Html.LabelFor(m => m.RoutingRuleset, new { @class = "control-label" })
+
+        <div class="controls">
+            <div id="@Html.IdFor(m => m.RoutingRuleset)" class="fixed-textarea" style="border: 1px solid #ccc; border-radius: 4px; margin-top: 10px;">@Model.RoutingRuleset</div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="checkbox withtooltip inline-label">
+            @Html.CheckBoxFor(m => m.SystemApproved)
+            @Cyara.Web.Resources.Labels.SystemApproved
+            @Html.Tooltip(Html.Resource("SystemApprovedTooltip"), Html.GlobalResource("TipLabel"))
+        </label>
+    </div>
+</div>

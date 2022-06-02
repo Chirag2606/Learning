@@ -1,0 +1,16 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.IVoicePlanComponentInCountry
+
+@Html.HiddenFor(m => m.InCountryLicensed)
+
+@if (Model.InCountryLicensed)
+{
+    <div class="control-group">
+        <label class="checkbox withtooltip">
+            @Html.CheckBoxFor(m => m.InCountryEnabled)
+            @Html.Resource("InCountryEnabledLabel")
+            @Html.Tooltip(Html.Resource("InCountryEnabledTooltip"), Html.GlobalResource("TipLabel"))
+        </label>
+    </div>
+}

@@ -1,0 +1,27 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.VoicePulsePlanEditViewModel
+
+<div class="form-head">
+    <h2>@Html.GlobalResource("PlanDetails")</h2>
+</div>
+<div class="form-body">
+    @Html.Partial("EditorTemplates/PlanEdit")
+    @Html.Partial("EditorTemplates/VoicePlanBaseWithCaps")
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.MinCallFrequency, new {@class = "control-label"})
+        <div class="controls">
+            @Html.DropDownListFor(m => m.MinCallFrequency, Model.CallFrequencies, new { @class = "input-mini" })
+            @Html.Tooltip(Html.Resource("MinCallFrequencyTooltip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.MinCallFrequency)
+        </div>
+    </div>
+    @Html.Partial("EditorTemplates/VoicePlanComponentInCountry")
+    <div class="control-group">
+        <label class="checkbox withtooltip">
+            @Html.CheckBoxFor(m => m.Premium)
+            @Html.DisplayNameFor(m => m.Premium)
+            @Html.Tooltip(Html.Resource("PremiumTooltip"), Html.GlobalResource("TipLabel"))
+        </label>
+    </div>
+</div>

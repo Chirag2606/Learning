@@ -1,0 +1,49 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.AccountEditViewModel
+
+@if (Model.ShowIdentityProvider)
+{
+    <div class="form-subhead no-overflow">
+        <h2 class="pull-left alignedSwitch">@Html.Resource("SubHeading")</h2>
+    
+        <div class="pull-left form-head-info">
+            <div class="switch switch-large" data-on="success" data-on-label="@Html.Resource("Default").ToUpper()" data-off-label="@Html.Resource("Custom").ToUpper()">
+                @Html.CheckBoxFor(m => m.UsesDefaultIdentityProvider, new { @class = "ignore-dirty" })
+            </div>
+        </div>
+    </div>
+    <div id="configureidp" class="form-body">
+        <div class="control-group">
+            @Html.LabelFor(m => m.IdentityProviderId, new { @class = "control-label" })
+            <div class="controls">
+                @Html.DropDownListFor(m => m.IdentityProviderId, Model.IdentityProviderTypes, Html.GlobalResource("ListChoose"))
+                @Html.ValidationMessageFor(m => m.IdentityProviderId)
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(function () {
+
+            var idpSelector = null;
+
+            var toggleIdp = function () {
+                if (idpSelector.is(':checked')) {
+                    $('#@Html.IdFor(m => m.IdentityProviderId)').val('');
+                    $('#configureidp').hide();
+                } else {
+                    $('#configureidp').show();
+                }
+            };
+
+            idpSelector = $('#@Html.IdFor(m => m.UsesDefaultIdentityProvider)').on('change',
+                function(e) {
+                    toggleIdp();
+                });
+
+            toggleIdp();
+
+        });
+    </script>
+}

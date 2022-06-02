@@ -1,0 +1,755 @@
+﻿@model Cyara.Web.Portal.Areas.Api.Models.V2.TestViewModel
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_BaseLayout.cshtml";
+}
+<table style="width: 100%;">
+<tbody>
+<tr style="vertical-align: top;">
+<td>
+<div id="options" style="margin-bottom: 20px;">
+    <strong>Get Response in:</strong>
+    <select name="dataType" data-target="ajax">
+        <option value="json" selected="selected">json</option>
+        <option value="xml">xml</option>
+    </select>
+</div>
+
+<div id="accordion" style="height: 100%;">
+<h3>{scope}/Campaign/{id}</h3>
+<div>
+    @{ 
+        string ccBase = Url.HttpRouteUrl("API_V2_0", new
+                                                     {
+                                                         version = "2.5",
+                                                         controller = "Campaign",
+                                                         account = "111",
+                                                         id = "222",
+                                                         scope = "voice"
+                                                     });
+    }
+    <strong>Campaign Type</strong>
+    <select name="scope" data-target="url" data-replace="voice">
+        <option value="agent">CCM Campaign</option>
+        <option value="voice" selected="selected">Voice Campaign</option>
+    </select>
+    <br />
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    <strong>Campaign Id (get/del)</strong>
+    <input type="number" data-target="url" data-replace="222" name="id" />
+    <br />
+    <p>
+        <button data-action="get" data-target="ajax" name="url" value="@ccBase" type="button">Get</button>
+        <button data-action="get-put" data-target="ajax" name="url" value="@ccBase" type="button">Get - update</button>
+        <button data-action="delete" type="button" name="url" data-target="ajax" value="@ccBase">Delete {id}</button>
+    </p>
+    <p>
+        <strong>Replay Plan Id</strong>
+        <input type="number" data-target="content" data-replace="333" name="id" value="1" />
+        <br />
+        <strong>TestCase Id</strong>
+        <input type="number" data-target="content" data-replace="444" name="id" value="1" />
+        <br />
+        <strong>TestCase Id</strong>
+        <input type="number" data-target="content" data-replace="555" name="id" value="1" />
+        <button data-action="post" type="button" name="url" 
+                data-content-type="xml" 
+                data-content='<Campaign xmlns="Schema.xsd"><Name>API Test</Name><Description>We are testing the API Campaign creation</Description><Replay><ConcurrentPorts>1</ConcurrentPorts><MaxCaps>10</MaxCaps><TestCaseDistributionProfile>RoundRobin</TestCaseDistributionProfile></Replay><Plan><PlanId>333</PlanId><PlanType>Replay</PlanType></Plan><TestCaseList><TestCase><TestCaseId>444</TestCaseId></TestCase></TestCaseList></Campaign>' 
+                data-target="ajax" 
+                value="@ccBase.Replace("/222", "")">
+            Create (new)</button>
+        <button data-action="post" type="button" name="url"
+                data-content-type="xml"
+                data-content='<Campaign xmlns="Schema.xsd"><Name>API Test</Name><Description>We are testing the API Campaign creation</Description><Replay><ConcurrentPorts>1</ConcurrentPorts><MaxCaps>10</MaxCaps></Replay><Plan><PlanId>333</PlanId><PlanType>Replay</PlanType></Plan><TestCaseList><TestCase><TestCaseId>444</TestCaseId><Probability>50</Probability></TestCase><TestCase><TestCaseId>555</TestCaseId><Probability>50</Probability></TestCase></TestCaseList></Campaign>'
+                data-target="ajax"
+                value="@ccBase.Replace("/222", "")">
+            Create (equal prob)
+        </button>
+        <button data-action="post" type="button" name="url" 
+                data-content-type="xml" 
+                data-content='<Campaign xmlns="Schema.xsd"><Name>API Test</Name><Description>We are testing the API Campaign creation</Description><Plan><PlanId>333</PlanId><PlanType>Replay</PlanType></Plan><TestCaseList><TestCase><TestCaseId>444</TestCaseId></TestCase></TestCaseList></Campaign>' 
+                data-target="ajax" 
+                value="@ccBase.Replace("/222", "")">
+            Create (fail)</button>
+    </p>
+</div>
+<h3>{scope}/Campaign/{id}/run</h3>
+<div>
+    @{
+        string crBase = Url.HttpRouteUrl("API_V2_0", new
+                                                     {
+                                                         version = "2.5",
+                                                         controller = "Campaign",
+                                                         account = "111",
+                                                         id = "222",
+                                                         action = "run",
+                                                         scope = "agent"
+                                                     });
+    }
+    <p>
+        <strong>Campaign Type</strong>
+        <select name="scope" data-target="url" data-replace="agent">
+            <option value="agent">CCM Campaign</option>
+            <option value="voice" selected="selected">Voice Campaign</option>
+        </select>
+        <br />
+        <strong>Account Id</strong>
+        <input type="number" data-target="url" data-replace="111" name="account" />
+        <br />
+        <strong>Campaign Id</strong>
+        <input type="number" data-target="url" data-replace="222" name="id" />
+        <br />
+        <button data-action="get" data-target="ajax" name="url" value="@crBase" type="button">Get</button>
+        <button data-action="delete" data-target="ajax" name="url" value="@crBase" type="button">Abort</button>
+    </p>
+    <p>
+        <strong>Start Date</strong>
+        <input type="text" data-target="content" data-replace="2014-01-01T11:00:00Z" name="id" value="2014-01-01T11:00:00Z" />
+        <br />
+        <button data-action="put" data-target="ajax" name="url" value="@crBase" data-content='<CampaignRunSummary xmlns="Schema.xsd"><Request><RunDate>2014-01-01T11:00:00Z</RunDate></Request></CampaignRunSummary>' data-content-type="xml" type="button">Start (xml)</button>
+        <button data-action="put" data-target="ajax" name="url" value="@crBase" data-content='{"request":{"runDate":"2014-01-01T11:00:00Z"}}' data-content-type="json" type="button">Start (json)</button>
+    </p>
+</div>
+<h3>{scope}/Campaign/{id}/runs</h3>
+<div>
+    @{
+        string crsBase = Url.HttpRouteUrl("API_V2_0", new
+        {
+            version = "2.5",
+            controller = "Campaign",
+            account = "111",
+            id = "222",
+            action = "runs",
+            scope = "agent",
+            FromDate = "333",
+            ToDate = "444",
+            Page = "555",
+            PerPage = "666"
+        });
+    }
+    <p>
+        <strong>Campaign Type</strong>
+        <select name="scope" data-target="url" data-replace="agent">
+            <option value="agent">CCM Campaign</option>
+            <option value="voice" selected="selected">Voice Campaign</option>
+        </select>
+        <br />
+        <strong>Account Id</strong>
+        <input type="number" data-target="url" data-replace="111" name="account" />
+        <br />
+        <strong>Campaign Id</strong>
+        <input type="number" data-target="url" data-replace="222" name="id" />
+        <br />
+        <strong>From Date (nullable)</strong>
+        <input type="text" data-target="url" data-replace="333" name="from" value="2014-01-01T11:00:00Z" />
+        <br />
+        <strong>To Date (nullable)</strong>
+        <input type="text" data-target="url" data-replace="444" name="to" value="2014-01-01T11:00:00Z"/>
+        <br />
+        <strong>Page</strong>
+        <input type="number" data-target="url" data-replace="555" name="page" value="1" />
+        <br />
+        <strong>Page Size</strong>
+        <input type="number" data-target="url" data-replace="666" name="perpage" value="20"/>
+        <br />
+        <button data-action="get" data-target="ajax" name="url" value="@crsBase" type="button">Get</button>
+    </p>
+</div>
+
+<h3>{scope}/Campaign/{id}/test</h3>
+<div>
+    @{ 
+        string ctBase = Url.HttpRouteUrl("API_V2_0", new
+                                                     {
+                                                         version = "2.5",
+                                                         controller = "Campaign",
+                                                         account = "111",
+                                                         id = "222",
+                                                         action = "test",
+                                                         scope = "agent"
+                                                     });
+    }
+    <p>
+        <strong>Campaign Type</strong>
+        <select name="scope" data-target="url" data-replace="agent">
+            <option value="agent" selected="selected">CCM Campaign</option>
+            <option value="voice">Voice Campaign</option>
+        </select>
+        <br />
+        <strong>Account Id</strong>
+        <input type="number" data-target="url" data-replace="111" name="account" />
+        <br />
+        <strong>Campaign Id</strong>
+        <input type="number" data-target="url" data-replace="222" name="id" />
+        <br />
+        <button data-action="get" data-target="ajax" name="url" value="@ctBase" type="button">Get</button>
+    </p>
+    <p>
+        Voice Campaigns:<br />
+        <strong>TestCase Id</strong>
+        <input type="number" data-target="content" data-replace="333" name="id" /><br />
+        <button data-action="post" data-target="ajax" name="url" value="@ctBase" 
+                data-content='<CampaignTests xmlns="Schema.xsd"><TestCaseList><TestCase><TestCaseId>333</TestCaseId><Probability>100</Probability></TestCase></TestCaseList></CampaignTests>'
+                data-content-type="xml" 
+                type="button">
+            Add (xml)</button>
+        <button data-action="post" data-target="ajax" name="url" value="@ctBase"
+                data-content='{"testCaseList":[{"testCaseId":333,"probability": 100.0}]}'
+                data-content-type="json" 
+                type="button">
+            Add (json)</button>
+        <button data-action="put" data-target="ajax" name="url" value="@ctBase" 
+                data-content='<CampaignTests xmlns="Schema.xsd"><TestCaseList><TestCase><TestCaseId>333</TestCaseId><Probability>100</Probability></TestCase></TestCaseList></CampaignTests>'
+                data-content-type="xml" 
+                type="button">
+            Set (xml)</button>
+        <button data-action="put" data-target="ajax" name="url" value="@ctBase"
+                data-content='{"testCaseList":[{"testCaseId":333,"probability": 100.0}]}'
+                data-content-type="json" 
+                type="button">
+            Set (json)</button>
+        <button data-action="delete" data-target="ajax" name="url" value="@ctBase" 
+                data-content='<CampaignTests xmlns="Schema.xsd"><TestCaseList><TestCase><TestCaseId>333</TestCaseId></TestCase></TestCaseList></CampaignTests>'
+                data-content-type="xml" 
+                type="button">
+            Del (xml)</button>
+        <button data-action="delete" data-target="ajax" name="url" value="@ctBase"
+                data-content='{"testCaseList":[{"testCaseId":333}]}'
+                data-content-type="json" 
+                type="button">
+            Del (json)</button>
+    </p>
+    <p>
+        Agent Campaigns:<br />
+        <strong>Agent Id</strong>
+        <input type="number" data-target="content" data-replace="444" name="agent" /><br />
+        <strong>Behavior Id</strong>
+        <input type="number" data-target="content" data-replace="555" name="beh" /><br />
+        <strong>Server Id</strong>
+        <input type="number" data-target="content" data-replace="666" name="server" /><br />
+        <button data-action="post" data-target="ajax" name="url" value="@ctBase" 
+                data-content='<CampaignTests xmlns="Schema.xsd"><AgentBehaviourList><AgentBehaviour><Agent><AgentId>444</AgentId></Agent><Behaviour><BehaviourId>555</BehaviourId><BehaviourType>Voice</BehaviourType></Behaviour><Server><ServerId>666</ServerId></Server></AgentBehaviour></AgentBehaviourList></CampaignTests>' 
+                data-content-type="xml" 
+                type="button">
+            Add (xml)</button>
+        <button data-action="delete" data-target="ajax" name="url" value="@ctBase" 
+                data-content='<CampaignTests xmlns="Schema.xsd"><AgentBehaviourList><AgentBehaviour><Agent><AgentId>444</AgentId></Agent><Behaviour><BehaviourId>555</BehaviourId><BehaviourType>Voice</BehaviourType></Behaviour><Server><ServerId>666</ServerId></Server></AgentBehaviour></AgentBehaviourList></CampaignTests>' 
+                data-content-type="xml" 
+                type="button">
+            Del (xml)</button>
+        <button data-action="put" data-target="ajax" name="url" value="@ctBase" 
+                data-content='<CampaignTests xmlns="Schema.xsd"><AgentBehaviourList><AgentBehaviour><Agent><AgentId>444</AgentId></Agent><Behaviour><BehaviourId>555</BehaviourId><BehaviourType>Voice</BehaviourType></Behaviour><Server><ServerId>666</ServerId></Server></AgentBehaviour></AgentBehaviourList></CampaignTests>' 
+                data-content-type="xml" 
+                type="button">
+            Set (xml)</button>
+    </p>
+</div>
+<h3>{scope}/Report/Run/{id}/summary</h3>
+<div>
+    @{ 
+        string summaryBase = Url.HttpRouteUrl("API_V2_0_Report", new
+                                                                 {
+                                                                     version = "2.5",
+                                                                     controller = "Run",
+                                                                     account = "111",
+                                                                     id = "222",
+                                                                     action = "Summary",
+                                                                     scope = "voice"
+                                                                 });
+    }
+    <strong>Campaign Type</strong>
+    <select name="scope" data-target="url" data-replace="voice">
+        <option value="agent">CCM Campaign</option>
+        <option value="voice" selected="selected">Voice Campaign</option>
+    </select>
+    <br />
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    <strong>Run Id</strong>
+    <input type="number" data-target="url" data-replace="222" name="id" />
+    <br />
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@summaryBase">Get</button>
+</div>
+<h3>{scope}/Report/Run/CampaignRunTestResults</h3>
+<div>
+    @{
+        string campaignRunBase = Url.HttpRouteUrl("API_V2_0_Report_Filtered", new
+                                                                              {
+                                                                                  version = "2.5",
+                                                                                  controller = "Run",
+                                                                                  account = "111",
+                                                                                  campaignId = "222",
+                                                                                  runId = "333",
+                                                                                  action = "CampaignRunTestResults",
+                                                                                  scope = "voice"
+                                                                              });
+    }
+    <strong>Campaign Type</strong>
+    <select name="scope" data-target="url" data-replace="voice">
+        <option value="agent">CCM Campaign</option>
+        <option value="voice" selected="selected">Voice Campaign</option>
+    </select>
+    <br />
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    (and one of:)<br />
+    <strong>Campaign Id</strong>
+    <input type="number" data-target="url" data-replace="222" name="campaignId" />
+    <br />
+    <strong>Run Id</strong>
+    <input type="number" data-target="url" data-replace="333" name="runId" />
+    <br />
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@campaignRunBase">Get</button>
+</div>
+<h3>{scope}/Report/Run/CampaignRunTestStepResults</h3>
+<div>
+    @{
+        string campaignTestStepBase = Url.HttpRouteUrl("API_V2_0_Report_Filtered", new
+                                                                                   {
+                                                                                       version = "2.5",
+                                                                                       controller = "Run",
+                                                                                       account = "111",
+                                                                                       campaignId = "222",
+                                                                                       runId = "333",
+                                                                                       action = "CampaignRunTestStepResults",
+                                                                                       scope = "voice"
+                                                                                   });
+    }
+    <strong>Campaign Type</strong>
+    <select name="scope" data-target="url" data-replace="voice">
+        <option value="agent">CCM Campaign</option>
+        <option value="voice" selected="selected">Voice Campaign</option>
+    </select>
+    <br />
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    (and one of:)<br />
+    <strong>Campaign Id</strong>
+    <input type="number" data-target="url" data-replace="222" name="campaignId" />
+    <br />
+    <strong>Run Id</strong>
+    <input type="number" data-target="url" data-replace="333" name="runId" />
+    <br />
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@campaignTestStepBase">Get</button>
+</div>
+<h3>{scope}/Report/Run/TestResult</h3>
+<div>
+    @{
+        string testResultBase = Url.HttpRouteUrl("API_V2_0_Report_Filtered", new
+                                                                             {
+                                                                                 version = "2.5",
+                                                                                 controller = "Run",
+                                                                                 account = "111",
+                                                                                 TestResultId = "222",
+                                                                                 Ticket = "333",
+                                                                                 action = "TestResult",
+                                                                                 scope = "voice"
+                                                                             });
+    }
+    <strong>Campaign Type</strong>
+    <select name="scope" data-target="url" data-replace="voice">
+        <option value="agent">CCM Campaign</option>
+        <option value="voice" selected="selected">Voice Campaign</option>
+    </select>
+    <br />
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    (and one of:)<br />
+    <strong>Test Result Id</strong>
+    <input type="number" data-target="url" data-replace="222" name="testresultid" />
+    <br />
+    <strong>Ticket (guid)</strong>
+    <input type="text" data-target="url" data-replace="333" name="ticket" />
+    <br />
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@testResultBase">Get</button>
+</div>
+<h3>{scope}/Report/Run/TestResultsFeed</h3>
+<div>
+    @{
+        string testResultFeedBase = Url.HttpRouteUrl("API_V2_0_Report_Filtered", new
+                                                                                 {
+                                                                                     version = "2.5",
+                                                                                     controller = "Run",
+                                                                                     account = "111",
+                                                                                     planType = "222",
+                                                                                     fromDate = "333",
+                                                                                     action = "TestResultsFeed",
+                                                                                     scope = "voice"
+                                                                                 });
+    }
+    <strong>Campaign Type</strong>
+    <select name="scope" data-target="url" data-replace="voice">
+        <option value="agent">CCM Campaign</option>
+        <option value="voice" selected="selected">Voice Campaign</option>
+    </select>
+    <br />
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    <strong>PlanType</strong>
+    <input type="text" data-target="url" data-replace="222" name="planType" value="pulse" />
+    <br />
+    <strong>From Date</strong>
+    <input type="text" data-target="url" data-replace="333" name="fromDate"  value="2016-12-11T12:43:58.0000000Z" />
+    <br />
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@testResultFeedBase">Get</button>
+</div>
+<h3>{scope}/Run/{id}</h3>
+<div>
+    @{ 
+        string rBase = Url.HttpRouteUrl("API_V2_0", new
+                                                    {
+                                                        version = "2.5",
+                                                        controller = "Run",
+                                                        account = "111",
+                                                        id = "222",
+                                                        scope = "voice"
+                                                    });
+    }
+    <strong>Campaign Type</strong>
+    <select name="scope" data-target="url" data-replace="voice">
+        <option value="agent">CCM Campaign</option>
+        <option value="voice" selected="selected">Voice Campaign</option>
+    </select>
+    <br />
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    <strong>Run Id</strong>
+    <input type="number" data-target="url" data-replace="222" name="id" />
+    <br />
+    <button data-action="get" data-target="ajax" name="url" value="@rBase" type="button">Get</button>
+</div>
+<h3>{scope}/cyaraxml/{id}/block/{block}/data/{data}/service/{service}</h3>
+<div>
+    <input type="hidden" data-target="ajax" name="url" value="@Url.HttpRouteUrl("API_V2_5_CyaraXml", new
+                                                                                                     {
+                                                                                                         version = "2.5",
+                                                                                                         controller = "CyaraXml",
+                                                                                                         account = "111",
+                                                                                                         id = "222",
+                                                                                                         scope = "voice",
+                                                                                                         block = "include",
+                                                                                                         data = "yes",
+                                                                                                         service = "yes"
+                                                                                                     })" />
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    <strong>Test Case Id</strong>
+    <input type="number" data-target="url" data-replace="222" name="id" value="0" />
+    <br />
+    <strong>Blocks</strong>
+    <select name="block" data-target="url" data-replace="include">
+        <option value="include" selected="selected">Include</option>
+        <option value="exclude">Exclude</option>
+        <option value="flatten">Flatten</option>
+    </select>
+    <br />
+    <strong>Include Data</strong>
+    <select name="data" data-target="url" data-replace="yes">
+        <option value="yes" selected="selected">yes</option>
+        <option value="no">no</option>
+    </select>
+    <br />
+    <strong>Include Service</strong>
+    <select name="service" data-target="url" data-replace="yes">
+        <option value="yes" selected="selected">yes</option>
+        <option value="no">no</option>
+    </select>
+    <br />
+    <button data-action="get" data-datatype="xml" type="button">Get</button>
+    <button data-action="get-post" data-datatype="xml" type="button">Bounce</button>
+    <br />
+    <textarea id="cyaraXml" style="width:350px; height:150px;"></textarea>
+    <br />
+    <button data-action="post" data-target="ajax" data-source='#cyaraXml' data-content-type="xml" type="button">Post</button>
+</div>
+<h3>voice/recording/{id}[/{step}]</h3>
+<div>
+    @{
+        string recBase = Url.HttpRouteUrl("API_V2_1_Recording", new
+                                                                {
+                                                                    version = "2.5",
+                                                                    controller = "Recording",
+                                                                    account = "111",
+                                                                    id = "222",
+                                                                    step = "333",
+                                                                    scope = "voice"
+                                                                });
+    }
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    <strong>Test Result Id</strong>
+    <input type="number" data-target="url" data-replace="222" name="id" />
+    <br />
+    <strong>Step no (optional)</strong>
+    <input type="number" data-target="url" data-replace="333" name="id" />
+    <br />
+    <button data-action="get" data-target="ajax" name="url" value="@recBase.Replace("/333", "")" type="button">Get Full</button>
+    <button data-action="get" data-target="ajax" name="url" value="@recBase" type="button">Get Step</button>
+</div>
+<h3>voice/recording/{id}/List</h3>
+<div>
+    @{
+        string recListBase = Url.HttpRouteUrl("API_V2_0", new
+                                                          {
+                                                              version = "2.5",
+                                                              controller = "Recording",
+                                                              action="List",
+                                                              account = "111",
+                                                              id = "222",
+                                                              scope = "voice"
+                                                          });
+    }
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    <strong>Test Result Id</strong>
+    <input type="number" data-target="url" data-replace="222" name="id" />
+    <br />
+    <button data-action="get" data-target="ajax" name="url" value="@recListBase" type="button">Get</button>
+</div>
+<h3>voice/testcase[/{id}]</h3>
+<div>
+    @{
+        string tcBase = Url.HttpRouteUrl("API_V2_0", new
+                                                     {
+                                                         version = "2.5",
+                                                         controller = "TestCase",
+                                                         account = "111",
+                                                         id = "222",
+                                                         scope = "voice"
+                                                     });
+    }
+    <strong>Account Id</strong>
+    <input type="number" data-target="url" data-replace="111" name="account" />
+    <br />
+    <strong>Test Case Id</strong>
+    <input type="number" data-target="url" data-replace="222" name="id" />
+    <br />
+    <button data-action="get" data-target="ajax" name="url" value="@tcBase.Replace("/222", "")" type="button">List</button>
+    <button data-action="get" data-target="ajax" name="url" value="@tcBase" type="button">Get</button>
+    <button data-action="get-put" data-target="ajax" name="url" value="@tcBase" type="button">Bounce</button>
+</div>
+
+<h3>{scope}/testcase/{id}/run[/{ticket}]</h3>
+<div>
+    @{ 
+        string ticketBase21 = Url.HttpRouteUrl("API_V2_0", new
+                                                           {
+                                                               version = "2.5",
+                                                               controller = "TestCase",
+                                                               account = "111",
+                                                               id = "222",
+                                                               action = "Run",
+                                                               scope = "voice",
+                                                               entity = "333"
+                                                           });
+    }
+    <p>
+        <strong>Campaign Type</strong>
+        <select name="scope" data-target="url" data-replace="voice">
+            <option value="agent">CCM Campaign</option>
+            <option value="voice" selected="selected">Voice Campaign</option>
+        </select>
+        <br />
+        <strong>Account Id</strong>
+        <input type="number" data-target="url" data-replace="111" name="account" value="9" />
+        <br />
+        <strong>Testcase Id</strong>
+        <input type="number" data-target="url" data-replace="222" name="id" value="22166" />
+        <br />
+        <button data-action="post" type="button" name="url" data-target="ajax" value="@ticketBase21.Replace("/333", "")">Validate</button>
+    </p>
+    <p>
+        <strong>Ticket</strong>
+        <input type="text" data-target="url" data-replace="333" name="id" value="{C38EB1E5-5A74-4E0A-8232-2ADAFD9677BD}" />
+        <br />
+        <button data-action="get" type="button" name="url" data-target="ajax" value="@ticketBase21">Get</button>
+        <button data-action="delete" type="button" name="url" data-target="ajax" value="@ticketBase21">Abort</button>
+    </p>
+</div>
+<h3>InvalidUrls</h3>
+<div>
+    @{ 
+        string baseUrl = Url.HttpRouteUrl("API_V2_0", new
+                                                      {
+                                                          version = "2.5",
+                                                          controller = "Campaign",
+                                                          account = "111",
+                                                          id = "222",
+                                                          action = "run",
+                                                          scope = "agent"
+                                                      });
+
+        string reportUrl = Url.HttpRouteUrl("API_V2_0_Report", new
+                                                               {
+                                                                   version = "2.5",
+                                                                   controller = "Campaign",
+                                                                   account = "111",
+                                                                   id = "222",
+                                                                   scope = "agent"
+                                                               });
+    }
+    <strong>Version 2 regular</strong><br />
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@baseUrl.Replace("2.5", "four")">Invalid Version</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@baseUrl.Replace("111", "acc")">Invalid Account</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@baseUrl.Replace("222", "entity")">Invalid id</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@baseUrl.Replace("agent", "action")">Invalid Agent</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@baseUrl.Replace("111", "acc").Replace("222", "id")">Invalid Account and Id</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@baseUrl.Replace("run", "unkonwn")">Invalid Action</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@baseUrl.Replace("Campaign", "invalid")">Invalid Controller</button>
+
+    <br />
+    <strong>Version 2 Report</strong><br />
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@reportUrl.Replace("2.5", "four")">Invalid Version</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@reportUrl.Replace("111", "acc")">Invalid Account</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@reportUrl.Replace("222", "entity")">Invalid id</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@reportUrl.Replace("agent", "action")">Invalid Agent</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@reportUrl.Replace("111", "acc").Replace("222", "id")">Invalid Account and Id</button>
+    <button data-action="get" type="button" name="url" data-target="ajax" value="@reportUrl.Replace("Campaign", "invalid")">Invalid Controller</button>
+
+    <br />
+    <strong>Version 1</strong><br />
+    <button data-action="get" type="button" name="url" data-target="ajax" value="http://localhost/Cyara.Web.Portal/api/1.0/unknown/id">Invalid V1 Url</button>
+</div>
+</div>
+</td>
+<td style="width: 70%;">
+    <div>
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            <strong>@Html.DisplayNameFor(m => m.Username)</strong>@Html.EditorFor(m => m.Username)
+            <strong>@Html.DisplayNameFor(m => m.Password)</strong>@Html.EditorFor(m => m.Password)
+            <button type="submit">Update</button>
+        }
+    </div>
+    <textarea id="resultArea" style="width: 95%; box-sizing: border-box; min-height: 650px; padding: 5px;"></textarea>
+</td>
+</tr>
+</tbody>
+</table>
+
+<script>
+    /// <reference path="/Scripts/jquery-1.8.3.js" />
+
+    $(function () {
+        $("#accordion").accordion();
+        $('button[data-action]').on('click', function (ev) {
+            var btn = $(ev.target);
+
+            var axo = {
+                headers: {
+                    Authorization: 'Basic @System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Model.Username + ":" + Model.Password))'
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $('#resultArea').val(function (i, val) { return val + (val ? '\r\n' : '') + "Complete: (" + jqXHR.status + ") " + textStatus + "\r\nError: " + errorThrown + "\r\n" + jqXHR.responseText; });
+                },
+                success: function (data, textStatus, jqXHR) {
+                    $('#resultArea').val(function (i, val) { return val + (val ? '\r\n' : '') + "Complete:" + textStatus + "\r\n" + jqXHR.responseText; });
+                }
+            };
+            var data = {};
+            var processDataTarget = function (element) {
+                var e = $(element);
+                switch (e.data('target')) {
+                case 'data':
+                    data[element.name] = e.val();
+                    break;
+                case 'ajax':
+                    axo[element.name] = e.val();
+                    var ct = e.data('content-type');
+                    var val = e.data('content');
+                    if (e.data('source')) {
+                        val = $(e.data('source')).val()
+                    }
+                    if (ct && val) {
+                        axo.data = (ct == 'json' ? JSON.stringify(val) : val);
+                        axo.contentType = (ct == 'json' ? "application/json" : "text/xml");
+                    }
+                    break;
+                case 'url':
+                    var r = e.data('replace');
+                    if (r) {
+                        axo.url = String(axo.url).replace(r, e.val());
+                    } else {
+                        axo.url += '?' + element.name + '=' + e.val();
+                    }
+                    break;
+                case 'content':
+                    var r = e.data('replace');
+                    if (r && axo.data && axo.data.replace) {
+                        axo.data = axo.data.replace(r, e.val());
+                    }
+                    break;
+                    //                        3, 308, 14093, 2667
+                }
+            }
+            axo.data = data;
+            var dt = btn.first().data('datatype');
+            if (dt) {
+                $('#options select[name=dataType]').val(dt);
+            }
+            processDataTarget(btn.get(0));
+            btn.closest('div').find('input[data-target]')
+                .add(btn.closest('div').find('select[data-target]'))
+                .add('#options [data-target]')
+                .each(function (index, element) {
+                    processDataTarget(element);
+                });
+
+
+
+            switch (btn.data('action')) {
+            case 'get':
+                axo.type = 'GET';
+                break;
+            case 'delete':
+                axo.type = 'DELETE';
+                break;
+            case 'put':
+                axo.type = 'PUT';
+                break;
+            case 'post':
+                axo.type = 'POST';
+                break;
+            case 'get-put':
+                axo.type = 'GET';
+                var oldSuccess = axo.success;
+                axo.success = function (data, textStatus, jqXHR) {
+                    $('#resultArea').val(function (i, val) { return val + (val ? '\r\n' : '') + "Resending:" + textStatus + "\r\n"; });
+                    axo.data = (axo.dataType == 'json' ? JSON.stringify(data) : new XMLSerializer().serializeToString(data.documentElement)),
+                        axo.contentType = (axo.dataType == 'json' ? "application/json" : "text/xml"),
+                        axo.type = 'PUT';
+                    axo.success = oldSuccess;
+                    $.ajax(axo);
+                }
+                break;
+            case 'get-post':
+                axo.type = 'GET';
+                var oldSuccess = axo.success;
+                axo.success = function (data, textStatus, jqXHR) {
+                    $('#resultArea').val(function (i, val) { return val + (val ? '\r\n' : '') + "Resending:" + textStatus + "\r\n"; });
+                    axo.data = (axo.dataType == 'json' ? JSON.stringify(data) : new XMLSerializer().serializeToString(data.documentElement)),
+                        axo.contentType = (axo.dataType == 'json' ? "application/json" : "text/xml"),
+                        axo.type = 'POST';
+                    axo.success = oldSuccess;
+                    $.ajax(axo);
+                }
+                break;
+            }
+
+            $('#resultArea').val("Sending: " + axo.url + "\r\n" + axo.data + "\r\n");
+            $.ajax(axo);
+        });
+    });
+</script>

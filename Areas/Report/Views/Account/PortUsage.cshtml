@@ -1,0 +1,77 @@
+﻿@using Cyara.Domain.Types.Licensing
+@using Cyara.Domain.Types.Roles
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Report.Models.AccountPortUsageViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+    var campaignClass = Model.CurrentTab == "Campaign" ? "active" : null;
+    var peakClass = Model.CurrentTab == "PeakPort" ? "active" : null;
+
+    // We want platform level licensing to take priority, but have PlatformUser role override account level licensing
+    var allowPortsPeak = Html.IsLicensed(LicensedFeature.AccountUsageReports) 
+                         && (Html.IsLicensed(LicensedFeature.AccountUsageReports, Model.SelectedAccountId) || User.IsInRole(StaticRoles.PlatformUser));
+}
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+
+    <style>
+        .porttooltip > .legend > div {
+            display: inline-block;
+        }
+
+        select.narrow {
+            width: 170px;
+        }
+    </style>
+
+}
+
+@section PageHeadRight
+{
+    @{
+        Html.RenderPartial("ServerTimeUtc");
+    }
+}
+
+@section PageContent
+{
+    <div class="overlap-tabs form-nogap">
+        <ul class="page-tabs">
+            @*if (Html.HasAccess(ResourceType.RealTimeAccountPortUsageReport, AccessType.Read))*@
+            <li><a href="#" data-target="pagePorts">@Html.Resource("TabPortsAndCaps")</a></li>
+        </ul>
+        <div class="clearfix"></div>
+        
+        @*if (Html.HasAccess(ResourceType.RealTimeAccountPortUsageReport, AccessType.Read))*@
+        <div class="form" id="pagePorts" style="padding-top: 30px;">
+            
+            <ul id="testsettingstabs" class="nav nav-tabs no-gap">
+                <li class="@campaignClass">
+                    <a id="campaign-tab" data-toggle="tab" href="#portsCampaign">@Html.Resource("TabPortsCampaign")</a>
+                </li>
+                @if (allowPortsPeak)
+                {
+                    <li class="@peakClass">
+                        <a id="peak-tab" data-toggle="tab" href="#portsPeak">@Html.Resource("TabPortsPeak")</a>
+                    </li>
+                }
+            </ul>
+            
+            <div class="tab-content">
+                <div id="portsCampaign" class="tab-pane @campaignClass">
+                    @{ Html.RenderPartial("RealTimePortUsageTab"); }
+                </div>
+                @if (allowPortsPeak)
+                {
+                    <div id="portsPeak" class="tab-pane @peakClass">
+                        @{ Html.RenderPartial("PeakPortUsageTab"); }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}

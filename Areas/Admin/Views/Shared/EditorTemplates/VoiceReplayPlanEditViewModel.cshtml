@@ -1,0 +1,11 @@
+﻿@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.VoiceReplayPlanEditViewModel
+
+<div class="form-head">
+    <h2>@Html.GlobalResource("PlanDetails")</h2>
+</div>
+<div class="form-body">       
+    @Html.Partial("EditorTemplates/PlanEdit")
+    @Html.Partial("EditorTemplates/VoicePlanBaseWithCaps")
+    @Html.Partial("EditorTemplates/VoicePlanComponentInCountry")
+</div>

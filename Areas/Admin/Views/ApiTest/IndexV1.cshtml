@@ -1,0 +1,306 @@
+﻿@model Cyara.Web.Portal.Areas.Api.Models.V2.TestViewModel
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_BaseLayout.cshtml";
+}
+<div>
+    @using(Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        <strong>@Html.DisplayNameFor(m => m.Username)</strong>@Html.EditorFor(m => m.Username)
+        <strong>@Html.DisplayNameFor(m => m.Password)</strong>@Html.EditorFor(m => m.Password)
+        <button type="submit">Update</button>
+    }
+</div>
+<table>
+    <thead>
+        <tr>
+            <td>Call</td>
+            <td>Result</td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <div id="options">
+                    <strong>Get Response in:</strong>
+                    <select name="dataType" data-target="ajax">
+                        <option value="json" selected="selected">json</option>
+                        <option value="xml">xml</option>
+                    </select>
+                </div>
+
+                <div id="accordion">
+                    <h3>CampaignRun/{id}</h3>
+                    <div>
+                        @{ 
+                            string rBase = Url.HttpRouteUrl("API_V1_0_Default", new
+                            {
+                                version = "1.0",
+                                controller = "CampaignRun",
+                                id = "222"
+                            });
+                        }
+                        <strong>Run Id</strong>
+                        <input type="number" data-target="url" data-replace="222" name="id" />
+                        <br />
+                        <button data-action="get" data-target="ajax" name="url" value="@rBase" type="button">Get</button>
+                    </div>
+                    <h3>CampaignRun/{id}/Start</h3>
+                    <div>
+                        <input type="hidden" data-target="ajax" name="url" value="@Url.HttpRouteUrl("API_V1_0_CampaignRun", new { 
+                            version = "1.0", 
+                            id = "111",
+                            command = "start"
+                        })" />
+                        <strong>Campaign Id</strong>
+                        <input type="number" data-target="url" data-replace="111" name="id" />
+                        <br />
+                        <button data-action="post" type="button">Go</button>
+                    </div>
+                    <h3>CampaignRun/{id}/Stop</h3>
+                    <div>
+                        <input type="hidden" data-target="ajax" name="url" value="@Url.HttpRouteUrl("API_V1_0_CampaignRun", new {
+                            version = "1.0",
+                            id = "111",
+                            command = "stop"
+                        })" />
+                        <strong>Campaign Id</strong>
+                        <input type="number" data-target="url" data-replace="111" name="id" />
+                        <br />
+                        <button data-action="post" type="button">Go</button>
+                    </div>
+                    <h3>Campaign Get/Put/Del</h3>
+                    <div>
+                        @{
+                            string ccBase = Url.HttpRouteUrl("API_V1_0_Default", new
+                            {
+                                version = "1.0",
+                                controller = "Campaign",
+                                id = "111",
+                            });
+                        }
+                        <strong>Campaign Id</strong>
+                        <input type="number" data-target="url" data-replace="111" name="id" />
+                        <br />
+                        <button data-action="get" data-target="ajax" name="url" value="@ccBase" type="button">Get</button>
+                        <button data-action="get-put" data-target="ajax" name="url" value="@ccBase" type="button">Get - update</button>
+                        <button data-action="delete" type="button" name="url" data-target="ajax" value="@ccBase">Delete {id}</button>
+                    </div>
+                    
+                    <h3>Report/CampaignRunTestResults</h3>
+                    <div>
+                        <input type="hidden" data-target="ajax" name="url" value="@Url.HttpRouteUrl("API_V1_0_Report", new {
+                                version="1.0" ,
+                                controller="Report",
+                                action="CampaignRunTestResults",
+                                AccountId="000",
+                                CampaignId="111",
+                                RunId="222",
+                                stepResults="false",
+                                maxResults = 100,
+                            })" />
+                        <strong>Account ID</strong>
+                        <input type="text" data-target="url" data-replace="000" name="id" value="1" />
+                        <br />
+                        (and one of:)<br />
+                        <strong>Campaign Id</strong>
+                        <input type="text" data-target="url" data-replace="111" name="id" value="" />
+                        <br />
+                        <strong>Run Id</strong>
+                        <input type="text" data-target="url" data-replace="222" name="id" value="" />
+                        <br />
+                        <button data-action="get" type="button">Go</button>
+                    </div>
+                    <h3>Report/CampaignRunTestStepResults</h3>
+                    <div>
+                        <input type="hidden" data-target="ajax" name="url" value="@Url.HttpRouteUrl("API_V1_0_Report", new {
+                                version="1.0" ,
+                                controller="Report",
+                                action="CampaignRunTestStepResults",
+                                AccountId="000",
+                                CampaignId="111",
+                                RunId="222",
+                                stepResults="false",
+                                maxResults = 100,
+                            })" />
+                        <strong>Account ID</strong>
+                        <input type="text" data-target="url" data-replace="000" name="id" value="1" />
+                        <br />
+                        (and one of:)<br />
+                        <strong>Campaign Id</strong>
+                        <input type="text" data-target="url" data-replace="111" name="id" value="" />
+                        <br />
+                        <strong>Run Id</strong>
+                        <input type="text" data-target="url" data-replace="222" name="id" value="" />
+                        <br />
+                        <button data-action="get" type="button">Go</button>
+                    </div>
+                    <h3>Report/TestResult</h3>
+                    <div>
+                        <input type="hidden" data-target="ajax" name="url" value="@Url.HttpRouteUrl("API_V1_0_Report", new {
+                                version="1.0" ,
+                                controller="Report",
+                                action="TestResult",
+                                AccountId="000",
+                                TestResultId="111",
+                                Ticket="222",
+                                maxResults = 100,
+                            })" />
+                        <strong>Account ID</strong>
+                        <input type="text" data-target="url" data-replace="000" name="id" value="1" />
+                        <br />
+                        (and one of:)<br />
+                        <strong>Test Result Id</strong>
+                        <input type="text" data-target="url" data-replace="111" name="testResultId" value="" />
+                        <br />
+                        <strong>Ticket (guid)</strong>
+                        <input type="text" data-target="url" data-replace="222" name="ticket" value="" />
+                        <br />
+                        <button data-action="get" type="button">Go</button>
+                    </div>
+
+                    <h3>Report/TestResultsFeed</h3>
+                    <div>
+                        <input type="hidden" data-target="ajax" name="url" value="@Url.HttpRouteUrl("API_V1_0_Report", new {
+                                version="1.0" ,
+                                controller="Report",
+                                action="TestResultsFeed",
+                                planType="111",
+                                fromDate="222",
+                                stepResults="false",
+                                AccountId="000",
+                                maxResults = 100,
+                            })" />
+                        <strong>Account ID</strong>
+                        <input type="text" data-target="url" data-replace="000" name="id" value="1" />
+                        <br />
+                        <strong>Plan Type</strong>
+                        <input type="text" data-target="url" data-replace="111" name="id" value="pulse" />
+                        <br />
+                        <strong>From Date</strong>
+                        <input type="text" data-target="url" data-replace="222" name="id" value="2016-12-11T12:43:58.0000000Z" />
+                        <br />
+                        <button data-action="get" type="button">Go</button>
+                    </div>
+
+                </div>
+            </td>
+            <td>
+                <textarea id="resultArea" style="width: 80%; height: 100%;"></textarea>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<script>
+    /// <reference path="/Scripts/jquery-1.8.3.js" />
+
+    $(function () {
+        $("#accordion").accordion();
+        $('button[data-action]').on('click', function (ev) {
+            var btn = $(ev.target);
+
+            var axo = {
+                headers: {
+                    Authorization: 'Basic @System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Model.Username + ":" + Model.Password))'
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $('#resultArea').val(function (i, val) { return val + (val ? '\r\n' : '') + "Complete:" + textStatus + "\r\nError: " + errorThrown + "\r\n" + jqXHR.responseText; });
+                },
+                success: function (data, textStatus, jqXHR) {
+                    $('#resultArea').val(function (i, val) { return val + (val ? '\r\n' : '') + "Complete:" + textStatus + "\r\n" + jqXHR.responseText; });
+                }
+            };
+            var data = {};
+            var processDataTarget = function (element) {
+                var e = $(element);
+                switch (e.data('target')) {
+                    case 'data':
+                        data[element.name] = e.val();
+                        break;
+                    case 'ajax':
+                        axo[element.name] = e.val();
+
+                        if (e.data('content-type') && btn.data('content')) {
+                            var ct = btn.data('content-type');
+                            axo.data = (ct == 'json' ? JSON.stringify(btn.data('content')) : btn.data('content'));
+                            axo.contentType = (ct == 'json' ? "application/json" : "text/xml");
+                        }
+                        break;
+                    case 'url':
+                        var r = e.data('replace');
+                        if (r) {
+                            axo.url = String(axo.url).replace(r, e.val());
+                        } else {
+                            axo.url += '?' + element.name + '=' + e.val();
+                        }
+                        break;
+                    case 'content':
+                        var r = e.data('replace');
+                        if (r && axo.data && axo.data.replace) {
+                            axo.data = axo.data.replace(r, e.val());
+                        }
+                        break;
+                        //                        3, 308, 14093, 2667
+                }
+            }
+            axo.data = data;
+            var dt = btn.first().data('datatype');
+            if (dt) {
+                $('#options select[name=dataType]').val(dt);
+            }
+            processDataTarget(btn.get(0));
+            btn.closest('div').find('input[data-target]')
+                .add(btn.closest('div').find('select[data-target]'))
+                .add('#options [data-target]')
+                .each(function (index, element) {
+                    processDataTarget(element);
+                });
+
+
+
+            switch (btn.data('action')) {
+                case 'get':
+                    axo.type = 'GET';
+                    break;
+                case 'delete':
+                    axo.type = 'DELETE';
+                    break;
+                case 'put':
+                    axo.type = 'PUT';
+                    break;
+                case 'post':
+                    axo.type = 'POST';
+                    break;
+                case 'get-put':
+                    axo.type = 'GET';
+                    var oldSuccess = axo.success;
+                    axo.success = function (data, textStatus, jqXHR) {
+                        $('#resultArea').val(function (i, val) { return val + (val ? '\r\n' : '') + "Resending:" + textStatus + "\r\n"; });
+                        axo.data = (axo.dataType == 'json' ? JSON.stringify(data) : new XMLSerializer().serializeToString(data.documentElement)),
+                        axo.contentType = (axo.dataType == 'json' ? "application/json" : "text/xml"),
+                        axo.type = 'PUT';
+                        axo.success = oldSuccess;
+                        $.ajax(axo);
+                    }
+                    break;
+                case 'get-post':
+                    axo.type = 'GET';
+                    var oldSuccess = axo.success;
+                    axo.success = function (data, textStatus, jqXHR) {
+                        $('#resultArea').val(function (i, val) { return val + (val ? '\r\n' : '') + "Resending:" + textStatus + "\r\n"; });
+                        axo.data = (axo.dataType == 'json' ? JSON.stringify(data) : new XMLSerializer().serializeToString(data.documentElement)),
+                        axo.contentType = (axo.dataType == 'json' ? "application/json" : "text/xml"),
+                        axo.type = 'POST';
+                        axo.success = oldSuccess;
+                        $.ajax(axo);
+                    }
+                    break;
+            }
+
+            $('#resultArea').val("Sending: " + axo.url);
+            $.ajax(axo);
+        });
+    });
+</script>

@@ -1,0 +1,176 @@
+﻿@using Cyara.Domain.Types.Roles
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal
+@using Cyara.Web.Portal.Core.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.AccountEditViewModel
+
+@{
+    string appRoot = System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath.Length == 1 ? System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath :
+                         string.Format("{0}/", System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+}
+
+<div class="form-grid">
+    <h2>@Html.Resource("SubHeading")</h2>
+
+    <div class="row-fluid limit" style="margin-bottom: 20px; display: block">
+        <div class="btn-group span2">
+            @if (!Model.ReadOnly)
+            {
+                <button data-toggle="dropdown" class="btn dropdown-toggle">@Html.Resource("CreatePlan") <span class="caret"></span></button>
+                <ul class="dropdown-menu">
+                    @foreach (var mediaPlan in Model.PlanTypes)
+                    {
+                        <li class="dropdown-submenu">
+                            <a tabindex="-1" href="#">@mediaPlan.MediaType.ToLabel()</a>
+                            <ul class="dropdown-menu">
+                                @foreach (var option in mediaPlan.Plans)
+                                {
+                                    <li>@Html.ActionLink(option.Item2, "create", "plan", new { media = mediaPlan.MediaType, plan = option.Item1, accountId = Model.SelectedAccountId }, null)</li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+        @if (User.IsInRole(StaticRoles.UserAdmin))
+        {
+            <div class="control-group span10">
+                <button id="upgrade" type="button" class="btn">@Html.Resource(@Model.VelocityIsLicensed ? "UpgradeCampaignsToVelocity" : "UpgradeToVelocity")</button>
+                <span id="upgradeMessage"></span>
+            </div>
+        }
+    </div>
+
+    <table id="plansgrid" class="is-responsive-table table truncated table-striped table-hover finger">
+        <colgroup>
+            <col style="width: 80px"/>
+            <col style="width: 200px" data-responsive-width/>
+            <col style="width: 100px"/>
+            <col style="width: 100px"/>
+            <col style="width: 150px"/>
+            <col style="width: 150px"/>
+        </colgroup>
+        <thead>
+            <tr>
+                <th></th>
+                <th>@Html.GlobalResource("TableHeading_Name")</th>
+                <th>@Html.GlobalResource("TableHeading_Media")</th>
+                <th>@Html.GlobalResource("TableHeading_Type")</th>
+                <th>@Html.GlobalResource("TableHeading_StartDate")</th>
+                <th>@Html.GlobalResource("TableHeading_ExpiryDate")</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var plan in Model.Plans.Collection)
+            {
+                <tr data-planid="@plan.PlanId">
+                    <td>@Html.RenderConditional(
+                            plan.Active,
+                            null,
+                            new HtmlString("<span class=\"label label-important\">{0}</span>".FormatWith(Html.GlobalResource("Inactive"))))
+                    <td class="truncate">@Html.RenderConditional(Model.ReadOnly, Html.ActionLink(plan.Name, "view", "plan", new { id = plan.PlanId }, null), Html.ActionLink(plan.Name, "edit", "plan", new { id = plan.PlanId }, null))</td>
+                    <td>@plan.MediaType</td>
+                    <td>@plan.Type</td>
+                    <td>@plan.Start</td>
+                    <td>@plan.End</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script id="template-planrow" type="text/x-tmpl">
+    <tr data-planid="{%=o.planId %}">
+        <td>{% if (o.active === false) { %}<span class="label label-important">@Html.GlobalResource("Inactive")</span>{% } %}</td>
+        <td class="truncate">@Html.RenderConditional(Model.ReadOnly, new HtmlString("<a href=\"" + @Url.Action("view", "plan") + "/{%=o.planId %}\">{%=o.name %}</a>"), new HtmlString("<a href=\"" + @Url.Action("edit", "plan") + "/{%=o.planId %}\">{%=o.name %}</a>"))</td>
+        <td>{%=o.mediaType %}</td>
+        <td>{%=o.type %}</td>
+        <td>{%=o.start %}</td>
+        <td>{%=o.end %}</td>
+    </tr>
+</script>
+
+<script type="text/javascript">
+
+    $(function() {
+        var grid = new AjaxGrid({
+            dataSourceUrl: '@Url.Action("plans", "Account", new { area = "admin" })',
+            table: '#plansgrid',
+            totalPages: @Model.Plans.TotalPages,
+            enableRefresh: true,
+            collectionSize: @Model.Plans.CollectionSize,
+            pageSize: @Model.Plans.PageSize,
+            pageNumber: @Model.Plans.PageNumber,
+            sortColumn: '@Model.Plans.SortColumn.ToJavascriptSafeString()',
+            sortAscending: @Model.Plans.SortAscending.ToString().ToLower(),
+            rowTemplate: 'template-planrow',
+            recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()'
+        });
+
+        function doUpgradeToVelocity(ciw)
+        {
+            $.ajax({
+                url: '@Url.Action("UpgradeToVelocity", "Account")',
+                type: 'POST',
+                contentType: "application/json;charset=utf-8",
+                headers: {
+                    "__RequestVerificationToken" : $("[name='__RequestVerificationToken']").val()
+                },
+                data: JSON.stringify({ continueIfWarning: ciw }),
+                success: function(data) {
+                    $('#upgradeMessage').text(data.message);
+
+                    // Modify the button text if we need to
+                    if (data.isLicensed === true){
+                        $('#upgrade').text('@Html.Resource("UpgradeCampaignsToVelocity")');
+                    }
+
+                    if (data.isWarning === true) {
+                        var modal = new ModalPopup({
+                            messageHtml: '',
+                            header: '@this.Html.Resource("UpgradeWarningTitle")',
+                            bodyMarkup: '@MvcHtmlString.Create(this.Html.Resource("UpgradeWarningBody"))'.format(data.warning),
+                            actionButton: '@this.Html.Resource("UpgradeWarningAction")',
+                            cancelButton: '@this.Html.Resource("UpgradeWarningCancel")',
+
+                            clickHandler: $.proxy(function () {
+                                modal.close();
+                                doUpgradeToVelocity(true);
+                            }, this),
+                            cancelHandler: $.proxy(function () {
+                                modal.close();
+                                $('#upgradeMessage').text('');
+                            }, this)
+                        });
+                    }
+                    else if (data.isSuccess !== true) {
+                        var modal = new ModalPopup({
+                            messageHtml: '',
+                            header: '@this.Html.Resource("UpgradeErrorTitle")',
+                            bodyMarkup: '@MvcHtmlString.Create(this.Html.Resource("UpgradeErrorBody"))'.format(data.error),
+                            showPrimary: false,
+                            cancelButton: '@this.Html.Resource("UpgradeErrorCancel")',
+                            cancelHandler: $.proxy(function () {
+                                modal.close();
+                                $('#upgradeMessage').text('');
+                            }, this)
+                        });
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    alert('Error upgrading account: ' + textStatus + ': ' + errorThrown);
+                }
+            });
+        }
+
+        $('#upgrade').click(function(ev) {
+            ev.preventDefault();
+            doUpgradeToVelocity(false);
+            return false;
+        });
+    });
+
+</script>

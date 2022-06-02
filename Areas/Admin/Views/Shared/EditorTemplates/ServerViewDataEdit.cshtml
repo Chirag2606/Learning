@@ -1,0 +1,41 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.ServerViewData
+
+
+<div id="template-create-server" style="display: none">
+    <form id="newServerForm">
+         <div class="control-group">
+            @Html.LabelForWithRequired(m => m.ServerName, new { @class = "control-label" })
+            <div class="controls" style="white-space: nowrap;">
+                @Html.TextBoxFor(m => m.ServerName, new {@class = "input-large"})
+                @Html.Tooltip(Html.Resource("ServerNameTip"), Html.GlobalResource("TipLabel"), "left")                
+            </div>            
+             @Html.ValidationMessageFor(m => m.ServerName)
+         </div>
+         <div class="control-group">
+            @Html.LabelForWithRequired(m => m.Hostname, new { @class = "control-label" })
+            <div class="controls">
+                @Html.TextBoxFor(m => m.Hostname, new {@class = "input-large"})
+                @Html.Tooltip(Html.Resource("HostnameTip"), Html.GlobalResource("TipLabel"), "left")                
+            </div>
+             @Html.ValidationMessageFor(m => m.Hostname)
+         </div>   
+         <div class="control-group">
+            @Html.LabelForWithRequired(m => m.Port, new { @class = "control-label" })
+            <div class="controls">
+                @Html.TextBoxFor(m => m.Port, new {@class = "input-mini", @Value = ""})
+                @Html.Tooltip(Html.Resource("PortTip"), Html.GlobalResource("TipLabel"), "left")                
+            </div>
+             @Html.ValidationMessageFor(m => m.Port)
+         </div>   
+
+        <button id="saveServer" class="btn btn-primary">@Html.Resource("AddServer")</button>&nbsp;
+        <button id="cancelServer" class="btn">@Html.GlobalResource("Cancel")</button>
+    </form>
+
+</div>
+
+
+
+

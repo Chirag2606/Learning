@@ -1,0 +1,335 @@
+﻿@using Cyara.Domain.Types.Common
+@using Cyara.Domain.Types.Shared
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Types.Reports
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@model Cyara.Web.Portal.Areas.Report.Models.ExecuteCustomReportViewModel
+
+@if (Model.ForPrinting == false)
+{
+    @Html.AntiForgeryToken()
+}
+@Html.HiddenFor(x => x.ViewLoaded)
+@Html.HiddenFor(x => x.TestCaseFilterSelection)
+@Html.HiddenFor(x => x.CampaignFilterSelection)
+@Html.HiddenFor(x => x.FailureReasonSelection)
+@*-- Date range selection --*@
+<div class="form boxed-bottom">
+    <div class="boxed-gap-small">
+        <div class="row-fluid limit">
+            <div class="span2">
+                @if (Model.ForPrinting)
+                {
+                    <strong>@Html.DisplayNameFor(m => m.MediaType)</strong>
+                    <div class="control-group">
+                        @Html.DisplayName(Model.MediaType == MediaType.Chat ? @Html.Resource("Web") : Model.MediaType.ToString())
+                    </div>
+                }
+                else
+                {
+                    @Html.LabelFor(m => m.MediaType, new { @class = "control-label" })
+                    <div class="control-group">
+                        @Html.DropDownListFor(m => m.MediaType, Model.MediaTypes, new { @class = "input-small" })
+                    </div>
+                }
+            </div>
+            <div class="span3">
+                @if (Model.ForPrinting)
+                {
+                    <strong>@Html.DisplayNameFor(m => m.DateRange)</strong>
+                    <div class="control-group">
+                        @Model.DateRangeTypes.Where(a => a.Value.Equals(Model.DateRange.ToString())).Select(c => c.Text).FirstOrDefault()
+                    </div>
+                }
+                else
+                {
+                    @Html.LabelFor(m => m.DateRange, new { @class = "control-label" })
+                    <div class="control-group">
+                        @Html.DropDownListFor(m => m.DateRange, Model.DateRangeTypes, new { @class = "input-medium" })
+                    </div>
+                }
+            </div>
+            <div class="span3">
+                @if (Model.ForPrinting)
+                {
+                    <strong>@Html.DisplayNameFor(m => m.From)</strong>
+                    <div class="control-group">
+                        @Html.DisplayTextFor(m => m.From)
+                    </div>
+                }
+                else
+                {
+                    @Html.LabelForWithRequired(m => m.From, new { @class = "control-label" })
+                    <div class="control-group">
+                        <div id="@(Html.IdFor(m => m.From))Picker" class="input-append">
+                            @Html.TextBoxFor(m => m.From, new { @class = "input-datetime", data_format = @Model.DatePattern, @Value = Model.From.FormatToPickerDateTime() })
+                            <span class="add-on">
+                                <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                            </span>
+                            <span class="add-on disabled-datepicker" style="display: none;">
+                                <i class="icon-calendar"></i>
+                            </span>
+                        </div>
+                        @Html.ValidationMessageFor(m => m.From)
+                    </div>
+                }
+            </div>
+            <div class="span3">
+                @if (Model.ForPrinting)
+                {
+                    <strong>@Html.DisplayNameFor(m => m.To)</strong>
+                    <div class="control-group">
+                        @Html.DisplayTextFor(m => m.To)
+                    </div>
+                }
+                else
+                {
+                    @Html.LabelForWithRequired(m => m.To, new { @class = "control-label" })
+                    <div class="control-group">
+                        <div id="@(Html.IdFor(m => m.To))Picker" class="input-append">
+                            @Html.TextBoxFor(m => m.To, new { @class = "input-datetime", data_format = @Model.DatePattern, @Value = Model.To.FormatToPickerDateTime() })
+                            <span class="add-on">
+                                <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                            </span>
+                            <span class="add-on disabled-datepicker" style="display: none;">
+                                <i class="icon-calendar"></i>
+                            </span>
+                        </div>
+                        @Html.ValidationMessageFor(m => m.To)
+                    </div>
+                }
+            </div>
+            <div class="span1">
+                <label class="control-label">&nbsp;</label>
+                <div class="control-group">
+                    <div class="pull-right">
+                        @if (!Model.ForPrinting)
+                        {
+                            <button type="submit" class="btn btn-primary btn-submit" @Html.RenderConditional(Model.Message.IsFatal(), "disabled=\"disabled\"", null)>@Html.GlobalResource("Apply")</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*-- Campaigns, Test Cases and Failure Reasons --*@
+<div class="boxed" id="filters-summary">
+    <div class="row-fluid bottom-gap-medium">
+        <div class="span2">
+            <h2>@Html.Resource("ReportFiltersSubTitle")</h2>
+        </div>
+        <div class="span3"></div>
+        <div class="span4">
+            <div class="row-fluid"><div class="span4" style="min-height: 0;"><b>@Html.Resource("LastModified")</b></div><div class="span8" style="min-height: 0;">@Model.LastModified</div></div>
+            <div class="row-fluid"><div class="span4"><b>@Html.Resource("ModifiedBy")</b></div><div class="span8">@Model.ModifiedBy</div></div>
+        </div>
+        <div class="span3 textright">
+            @if (!Model.ForPrinting)
+            {
+                <a class="btn" id="change-filters">@Html.Resource("ReportFilters")</a>
+            }
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div class="span4">
+            <div>
+                <a href="#campaigntestcase" class="clickable-header js-filtertab">@Html.Resource("Campaigns") <span class="js-total-campaigns">(@Model.CampaignsFilter.CollectionSize)</span></a>
+            </div>
+            @foreach (var campaign in Model.CampaignsFilter.Collection)
+            {
+                <div class="truncate">@campaign</div>
+            }
+            @if (Model.CampaignsFilter.Collection.Count() < Model.CampaignsFilter.CollectionSize)
+            {
+                <a href="#campaigntestcase" class="js-filtertab">@(Model.CampaignsFilter.CollectionSize - Model.CampaignsFilter.Collection.Count()) @Html.Resource("MoreCampaigns") <span class='open-more'></span></a>
+            }
+        </div>
+        <div class="span4">
+            <div>
+                <a href="#campaigntestcase" class="clickable-header js-filtertab">@Html.Resource("TestCases") <span class="js-total-testcases">(@Model.TestCasesFilter.CollectionSize)</span></a>
+            </div>
+            @foreach (var testCase in Model.TestCasesFilter.Collection)
+            {
+                <div class="truncate">@testCase</div>
+            }
+            @if (Model.TestCasesFilter.CollectionSize > Model.TestCasesFilter.Collection.Count())
+            {
+                <a href="#campaigntestcase" class="js-filtertab">@(Model.TestCasesFilter.CollectionSize - Model.TestCasesFilter.Collection.Count()) @Html.Resource("MoreTestCases") <span class='open-more'></span></a>
+            }
+        </div>
+        <div class="span4">
+            <div>
+                <a href="#failurereasons" class="clickable-header js-filtertab">@Html.Resource("FailureReasons") <span class="js-total-reasons">(@Model.FailureReasonFilter.CollectionSize</span></a>
+            </div>
+            @foreach (var failureReason in Model.FailureReasonFilter.Collection)
+            {
+                <div class="truncate">@failureReason</div>
+            }
+            @if (Model.FailureReasonFilter.CollectionSize > Model.FailureReasonFilter.Collection.Count())
+            {
+                <a href="#failurereasons" id="extraFailureReasonsLink" class="js-filtertab">@(Model.FailureReasonFilter.CollectionSize - Model.FailureReasonFilter.Collection.Count()) @Html.Resource("MoreFailureReasons") <span class='open-more'></span></a>
+            }
+        </div>
+    </div>
+</div>
+<div id="filters-section" class="boxed" style="display: none">
+    <ul class="filter-tabs">
+        <li class="active"><a href="#campaigntestcase">@Html.Resource("Campaigns") <span class="js-total-campaigns">@Html.GlobalResource("InBrackets", Model.CampaignsFilter.CollectionSize)</span> &amp; @Html.Resource("TestCases") <span class="js-total-testcases">@Html.GlobalResource("InBrackets", Model.TestCasesFilter.CollectionSize)</span></a></li>
+        <li><a href="#failurereasons">@Html.Resource("FailuresTab") <span class="js-total-reasons">@Html.GlobalResource("InBrackets", "0")</span></a></li>
+    </ul>
+    <div class="filter-tabs-content">
+        <div class="filter-pane active" id="campaigntestcase">
+            <h2>@Html.Resource("CampaignsTab")</h2>
+            <div class="box-selection">
+                <div class="inner">
+                    <div class="selection-head">@Html.GlobalResource("Folders")</div>
+                    <div class="selection">
+                        <div id="testCasesSelector" class="tree" tabindex="-1"></div>
+                    </div>
+                </div>
+                <div class="buttons">
+                    <button class="btn" id="clear-selection">@Html.GlobalResource("ClearSelection")</button>
+                    @Html.RenderConditional(Model.HasDeletedTestCases, new HtmlString("<button class=\"btn\" id=\"remove-deleted\">" + Html.Resource("RemoveDeleted") + "</button> " + Html.Tooltip(Html.Resource("RemoveDeletedTip"), Html.GlobalResource("TipLabel"))), null)
+                </div>
+            </div>
+        </div>
+        <div class="filter-pane" id="failurereasons">
+            <h2>@Html.Resource("FailuresTab")</h2>
+            <div class="box-selection">
+                <div class="inner">
+                    <div class="selection-head">@Html.Resource("FailureReasonsWidgetTitle")</div>
+                    <div class="selection">
+                        <div id="failureReasonsSelector" class="tree" tabindex="-1"></div>
+                    </div>
+                </div>
+                <div class="buttons">
+                    <button class="btn" id="clear-selection-reasons">@Html.GlobalResource("ClearSelection")</button>
+                </div>
+            </div>
+        </div>
+        <div class="filter-pane-actions pull-right">
+            <button class="btn btn-primary" type="submit">@Html.Raw(Html.GlobalResource("SaveRun"))</button>
+            <button class="btn" id="cancel-filters">@Html.GlobalResource("Cancel")</button>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(function() {
+
+        try {
+            var customReport = new CustomReport({
+                mediaSelector: '#@Html.IdFor(m => m.MediaType)',
+                testCaseFilterSelector: '#@Html.IdFor(m => m.TestCaseFilterSelection)',
+                campaignFilterSelector: '#@Html.IdFor(m => m.CampaignFilterSelection)',
+                failureReasonSelector: '#@Html.IdFor(m => m.FailureReasonSelection)',
+                hasFiltersThatRequireMediaType:
+                    @Html.Raw((Model.CampaignsFilter.CollectionSize > 0 || Model.TestCasesFilter.CollectionSize > 0).ToJavaScript()),
+                exportButtons: '.js-export',
+                exportUrl:
+                    '@Html.Raw(Url.Action("Export", new { type = "REPLACE_TYPE", id = Model.ReportId, resultType = "REPLACE_RESULTTYPE", timestamp = Model.ViewLoaded }))',
+                mediaChangeModal: {
+                    message: '@Html.Resource("MediaTypeChange_Body").ToEscapedSingleQuotes()',
+                    header: '@Html.Resource("MediaTypeChange_Title").ToEscapedSingleQuotes()',
+                    actionButton: '@Html.GlobalResource("Ok")'
+                },
+                tree: {
+                    selector: '#testCasesSelector',
+                    data: JSON.parse(@Html.RawJsonString(Model.FilterTree)),
+                    open: '@Url.Action("Open")',
+                    testCaseRootKey: '@EntityType.TestCase.GetRootKey()',
+                    campaignRootKey: '@EntityType.Campaign.GetRootKey()'
+                },
+                failureReasons: {
+                    selector: '#failureReasonsSelector',
+                    data: JSON.parse(@Html.RawJsonString(Model.FailureReasonsTree)),
+                    clearSelection: '#clear-selection-reasons'
+                }
+            });
+
+
+            $('.input-datetime').closest('.input-append').datetimepicker({ pickTime: true, pick12HourFormat: false, incrementHoursLabel: "@Html.GlobalResource("IncrementHoursLabel")", incrementMinutesLabel: "@Html.GlobalResource("IncrementMinutesLabel")", incrementSecondsLabel: "@Html.GlobalResource("IncrementSecondsLabel")", decrementHoursLabel: "@Html.GlobalResource("DecrementHoursLabel")", decrementMinutesLabel: "@Html.GlobalResource("DecrementMinutesLabel")", decrementSecondsLabel: "@Html.GlobalResource("DecrementSecondsLabel")" });
+
+            var from = $("#@(Html.IdFor(m => m.From))");
+            var to = $("#@(Html.IdFor(m => m.To))");
+            var fromAddOn = $('#@(Html.IdFor(m => m.From))Picker .add-on');
+            var toAddOn = $('#@(Html.IdFor(m => m.To))Picker .add-on');
+            var fromDisabled = $('#@(Html.IdFor(m => m.From))Picker .disabled-datepicker');
+            var toDisabled = $('#@(Html.IdFor(m => m.To))Picker .disabled-datepicker');
+            $('.disabled-datepicker').unbind('click');
+
+            var setDateRangeControlsToReadOnly = function(setToReadonly) {
+                if (setToReadonly) {
+                    fromAddOn.hide();
+                    toAddOn.hide();
+                    fromDisabled.show();
+                    toDisabled.show();
+                    from.prop("readonly", true);
+                    to.prop("readonly", true);
+                } else {
+                    fromAddOn.show();
+                    toAddOn.show();
+                    fromDisabled.hide();
+                    toDisabled.hide();
+                    from.prop("readonly", false);
+                    to.prop("readonly", false);
+                }
+            };
+
+            var setCustomDateRange = function(dateRange) {
+
+                from.attr("saved", from[0].value);
+                to.attr("saved", to[0].value);
+                from[0].value = "";
+                to[0].value = "";
+                $.ajax({
+                    url: '@Url.Action("GetDateRange")',
+                    type: 'POST',
+                    contentType: "application/json;charset=utf-8",
+                    headers: {
+                        "__RequestVerificationToken": $("[name='__RequestVerificationToken']").val()
+                    },
+                    data: JSON.stringify({ routeAccountId: @Model.SelectedAccountId, dateRange: dateRange }),
+                    success: function(data) {
+                        if (data.isSuccess) {
+                            if (data.data.range === '@CustomDateRange.Custom') {
+                                setDateRangeControlsToReadOnly(false);
+                                from[0].value = from.attr("saved");
+                                to[0].value = to.attr("saved");
+                            } else {
+                                setDateRangeControlsToReadOnly(true);
+                                from[0].value = data.data.from;
+                                to[0].value = data.data.to;
+                            }
+                        }
+                    },
+                    error: function() {
+                        setDateRangeControlsToReadOnly(false, true);
+                        from[0].value = "";
+                        to[0].value = "";
+                    }
+                });
+
+            };
+
+
+            $('#@Html.IdFor(m => m.DateRange)').on('change',
+                function(e) {
+                    setCustomDateRange($(e.target).val());
+                });
+
+            if ($('#DateRange').val() === '@CustomDateRange.Custom') {
+                setDateRangeControlsToReadOnly(false);
+            } else {
+                setDateRangeControlsToReadOnly(true);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+
+    });
+</script>

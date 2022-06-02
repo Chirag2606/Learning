@@ -1,0 +1,159 @@
+﻿@using Cyara.Domain.Types.Common
+@using Cyara.Domain.Types.Plan
+@using Cyara.Domain.Types.Shared
+@using Cyara.Domain.Types.TestCase
+@using Cyara.Shared.Types.Storage
+@using Cyara.Shared.Types.TestCase
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@using Cyara.Web.Portal.Core.Script
+@using Cyara.Web.Portal.Models
+@model Cyara.Web.Portal.Areas.Report.Models.TestCaseBreakdownViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+    Layout = "~/Views/Shared/_BaseLayout.cshtml";
+}
+
+@section Head
+{
+    <script type="text/javascript">
+        __cyara.resources = new Resources();
+        __cyara.types = {};
+        __cyara.types.@Html.Raw(Export.Enum<FolderType>());
+        __cyara.types.@Html.Raw(Export.Enum<EntityType>());
+        __cyara.types.@Html.Raw(Export.Enum<ExchangeType>());
+        __cyara.types.@Html.Raw(Export.Enum<MeanOpinionScore>());
+        __cyara.types.@Html.Raw(Export.Enum<CallFlow>());
+        __cyara.types.@Html.Raw(Export.Enum<PlanType>());
+        __cyara.types.@Html.Raw(Export.Enum<MediaType>());
+        __cyara.instances = {};
+    </script>
+}
+
+<div id="page-body" class="container">
+    <h1>@Model.ReportName</h1>
+    <br />
+    <div class="overlap">
+        <table class="table truncated squished">
+            <colgroup>
+                <col />
+                <col />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>@Html.GlobalResource("TableHeading_TestCase")</th>
+                    <th>@Html.GlobalResource("TableHeading_Folder")</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="loud">
+                    <td class="wrap" id="tcName">@Model.TestCaseName</td>
+                    <td class="wrap" id="tcFolderPath">@Model.FolderPath</td>
+                </tr>
+                <tr class="whisper">
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="boxed top-gap-small">
+            <div class="row-fluid">
+                <div class="span7">
+                    @if (Model.TestResultSummaries != null)
+                    {
+                        <table id="PulseSummaryData" style="display: none" data-calls-label="@Html.ReportingGlobalResource("TotalCalls", "TotalSessions")">
+                            @foreach (var summary in Model.TestResultSummaries)
+                            {
+                                <tr>
+                                    <th scope="row" data-type="label">@summary.ResultType.ToLabel()</th>
+                                    <td data-type="data">@summary.Number</td>
+                                    <td data-type="colourCode" class="legend-colour label @summary.ResultType.ToString().ToLower()"></td>
+                                </tr>
+                            }
+                        </table>
+                        <div class="pull-right">
+                            <table class="legend-grid">
+                                @foreach (var summary in Model.TestResultSummaries)
+                                {
+                                    <tr>
+                                        <td data-type="colour" title="@summary.Percent%"><span class="@summary.ResultType.ToString().ToLower() label legend-colour">&nbsp;</span></td>
+                                        <td data-type="label" title="@summary.Percent%">@summary.ResultType.ToLabel()</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    }
+                    <div id="PulseSummaryDataArea" style="width: 350px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="boxed-divider"></div>
+        <div class="boxed">
+
+            <div class="radiotabs btn-group" data-toggle="buttons-radio">
+                <button name="@Html.NameFor(m => m.ResultFilter)" value="@ResultFilter.All" class="btn @Html.RenderConditional(Model.ResultFilter == ResultFilter.All, new HtmlString("active"), null)">@Html.GlobalResource("All")</button>
+                <button name="@Html.NameFor(m => m.ResultFilter)" value="@ResultFilter.Success" class="btn @Html.RenderConditional(Model.ResultFilter == ResultFilter.Success, new HtmlString("active"), null)">@Html.GlobalResource("Success")</button>
+                <button name="@Html.NameFor(m => m.ResultFilter)" value="@ResultFilter.Satisfactory" class="btn @Html.RenderConditional(Model.ResultFilter == ResultFilter.Satisfactory, new HtmlString("active"), null)">@Html.GlobalResource("Satisfactory")</button>
+                <button name="@Html.NameFor(m => m.ResultFilter)" value="@ResultFilter.Unsuccessful" class="btn @Html.RenderConditional(Model.ResultFilter == ResultFilter.Unsuccessful, new HtmlString("active"), null)">@Html.GlobalResource("Unsuccessful")</button>
+            </div>
+            <table id="pulseTestCasesGrid" class="table table-striped table-hover finger">
+                <colgroup>
+                    <col />
+                    <col style="width: 20%" />
+                    <col style="width: 10%" />
+                    <col />
+                    <col style="width: 10%" />
+                    <col style="width: 80px" />
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="result-cell"></th>
+                        <th data-sort="@Columns.StartDate"><a href="#">@Html.GlobalResource("TableHeading_Date")</a></th>
+                        <th data-sort="@Columns.Duration"><a href="#">@Html.GlobalResource("TableHeading_Duration")</a></th>
+                        <th data-sort="@Columns.DetailedResult"><a href="#">@Html.GlobalResource("TableHeading_DetailedResult")</a></th>
+                        <th data-sort="@Columns.Result"><a href="#">@Html.GlobalResource("TableHeading_Result")</a></th>
+                        <th>@Html.ReportingGlobalResource("TableHeading_Audio", "TableHeading_Visual")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var result in Model.TestResults.Collection)
+                    {
+                        <tr>
+                            <td class="result-cell @result.Result.ToLower()"></td>
+                            <td>@Html.ActionLink(result.ActualStart, "ResultDetails", new { testResultId = result.TestResultId, mediaType = Model.MediaType })</td>
+                            <td>@result.Duration</td>
+                            <td>@result.DetailedResult</td>
+                            <td><span class="label @result.Result.ToLower()">@result.ResultLabel</span></td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(result.MediaFile))
+                                {
+                                    <a class="btn js-visual-test" data-test-result-id="@result.TestResultId" title="@Html.GlobalResource("Play")" href="@Html.RenderConditional(Model.MediaType == MediaType.Voice, new HtmlString(Url.Action("Recordings", "Media", new { area = "", testResultId = result.TestResultId, resource = result.MediaFile })), new HtmlString("#"))"><i class="icon-play icon-custom"></i></a>
+                                }
+                                else
+                                {
+                                    <span>@Html.GlobalResource("NotApplicable")</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(function () {
+        var chart = new ReportChart({
+            dataTableName: 'PulseSummaryData',
+            chartTableName: 'PulseSummaryDataArea',
+            generateColours: false,
+            enableLinks: false,
+            enablePopovers: false,
+            popoverHandler: null
+        });
+    });
+</script>

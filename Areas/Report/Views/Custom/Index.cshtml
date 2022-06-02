@@ -1,0 +1,136 @@
+﻿@{
+    ViewBag.Title = Html.Resource("Title");
+}
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@model Cyara.Web.Portal.Areas.Report.Models.CustomReportViewModel
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+    @Html.ActionLink(Html.Resource("CreateReport"), "Create", "Custom", null, new { @class = "btn", id = "createReport" })
+    @Html.ActionLink(Html.Resource("SeverityMapping"), "Index", "Mapping", null, new { @class = "btn", id = "severityMapping" })
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <div class="form">
+            <div class="form-head">
+                <h2>@Html.Resource("SubHeading")</h2>
+            </div>
+        </div>
+        <div class="boxed no-top">
+            <table id="reportsgrid" class="table table-striped table-hover finger truncated">
+                <colgroup>
+                    <col />
+                    <col style="width: 30%"/>
+                    <col style="width: 15%"/>
+                    <col style="width: 15%"/>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th data-sort="@Columns.Name"><a href="#">@Html.GlobalResource("TableHeading_Name")</a></th>
+                        <th>@Html.GlobalResource("TableHeading_Schedule")</th>
+                        <th data-sort="@Columns.NextRunDate"><a href="#">@Html.GlobalResource("TableHeading_NextRunDate")</a></th>
+                        <th data-sort="@Columns.LastRunDate"><a href="#">@Html.GlobalResource("TableHeading_LastRunDate")</a></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Reports.Collection)
+                    {
+                        <tr data-customReportId="@item.CustomReportId">
+                            <td class="truncate js-name"><a href="@Url.Action("Edit", "Custom", new { id = item.CustomReportId })" title="@item.Name">@item.Name</a></td>
+                            <td class="truncate">
+                                @if (item.Schedule.IsScheduled)
+                                {
+                                    <span class="greentick"></span>
+                                    @item.Schedule.ScheduleLabel
+                                }
+                                else
+                                {
+                                    <a href="@Url.Action("Edit", "Custom", new { id = item.CustomReportId })#schedule" title="@item.Name">@item.Schedule.ScheduleLabel</a>
+                                }
+                            </td>
+                            <td class="truncate">@item.NextRun</td>
+                            <td class="truncate">@item.LastRun</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script id="template-row" type="text/x-tmpl">
+        <tr data-customReportId="{%= o.customReportId %}">
+            <td class="truncate js-name"><a href="{%= "@Url.Action("Edit", "Custom", new { id = "replace_id" })".replace(/replace_id/gi, o.customReportId) %}" title="{%= o.name %}">{%= o.name %}</a></td>
+            <td class="truncate">
+            {% if (o.schedule.isScheduled) { %}
+                 <span class="greentick"></span> {%= o.schedule.scheduleLabel %}
+            {% } else { %}
+                 <a href="{%= "@Url.Action("Edit", "Custom", new { id = "replace_id" })#schedule".replace(/replace_id/gi, o.customReportId) %}" title="{%= o.name %}">{%= o.schedule.scheduleLabel %}</a>
+            {% } %}
+            </td>
+            <td class="truncate">{%= o.nextRun %}</td>
+            <td class="truncate">{%= o.lastRun %}</td>
+        </tr>
+    </script>
+    
+    <script type="text/javascript">
+
+        var chosenAccountId = @(Model.SelectedAccountId ?? -1);
+
+        $(function() {
+
+            var grid = new AjaxGrid({
+                dataSourceUrl: '@Url.Action("list", "Custom", new { area = "Report" })',
+                table: '#reportsgrid',
+                totalPages: @Model.Reports.TotalPages,
+                collectionSize: @Model.Reports.CollectionSize,
+                pageSize: @Model.Reports.PageSize,
+                pageNumber: @Model.Reports.PageNumber,
+                sortColumn: '@Model.Reports.SortColumn.ToJavascriptSafeString()',
+                sortAscending: @Model.Reports.SortAscending.ToJavaScript(),
+                rowTemplate: 'template-row',
+                recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()',
+                ignoreActiveClick: true,
+                noStateInStorage: true
+            });
+
+            var trash = new GridRowTrash({
+                table: '#reportsgrid',
+                deleteToolTip: '@Html.Resource("DeleteTooltip").ToJavascriptSafeString()',
+                constructEntity: function(row, grid) {
+                    var id = row.attr('data-customReportId');
+                    var name = $.trim($("td.js-name a", row).attr("title"));
+                    return { name: name, key: id };
+                },
+                modalHeader: '@Html.Resource("DeleteModalHeader").ToJavascriptSafeString()',
+                clickHandler: function(key, row) {
+                    grid.showSpinner();
+                    var id = row.attr('data-customReportId');
+                    $.post('@Url.Action("delete", "Custom")/{0}'.format(id), function(data) {
+                        if (typeof data != 'undefined' && typeof data.isSuccess != 'undefined') {
+                            if (data.isSuccess) {
+                                ShowMessage.Success(data.message);
+                                grid.refresh();
+                            } else {
+                                ShowMessage.Error(data.message);
+                            }
+                        }
+                        grid.hideSpinner();
+                    });
+                }
+            });
+
+        });
+
+    </script>
+    }

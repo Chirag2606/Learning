@@ -1,0 +1,50 @@
+﻿@using Cyara.Shared.Web.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.Notification.TemplateViewModel
+
+@using (Html.BeginForm("Template", "Notification", FormMethod.Post, new { @class = "form-horizontal" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.TemplateId)
+
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.TemplateName, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.TemplateName, new { @class = "input-xxlarge" })
+            @Html.ValidationMessageFor(m => m.TemplateName)
+            @Html.ValidationMessageFor(m => m.TemplateId)
+        </div>
+    </div>
+
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.Subject, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.Subject, new { @class = "input-xxlarge" })
+            @Html.ValidationMessageFor(m => m.Subject)
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div>
+            <label class="control-label pull-left bottom-align" for="@Html.IdFor(m => m.MessageBody)">@Cyara.Web.Resources.Labels.MessageBody<span class="required">*</span></label>
+
+            <div class="pull-right" id="editTemplateTagDropdownContainer"></div>
+            <div class="clearfix"></div>
+        </div>
+
+        <div class="controls">
+            <div id="editTemplateTagEditor"></div>
+            @Html.HiddenFor(m => m.MessageBody, new { @class = "validate-hidden" })
+            @Html.ValidationMessageFor(m => m.MessageBody)
+        </div>
+    </div>
+}
+<script type="text/javascript">
+    (function () {
+        var nt = new NotificationTemplate({
+            tags: JSON.parse(@Html.RawJsonString(Model.TagsJson)),
+            toolbarContainer: '#editTemplateTagDropdownContainer',
+            editor: '#editTemplateTagEditor',
+            messageBody: '#@Html.IdFor(m => m.MessageBody)'
+        });
+    })();
+</script>

@@ -1,0 +1,292 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Areas.Report.Models
+@using JQChart.Web.Mvc
+@model Cyara.Web.Portal.Areas.Report.Models.AccountPortUsageViewModel
+
+@helper RenderPeakPortTab()
+{
+    @(Html.JQChart()
+          .Chart(Model.PeakPorts.Data)
+          .ID("peak-ports-chart")
+          .Width("100%")
+          .Height(400)
+          .Border(b => b.Visible(false))
+          .ChartAreaBackground(config =>
+          {
+              var lg = config.LinearGradient();
+              lg.ColorStops(cs => { cs.Add(0, "#274658"); cs.Add(1, "#0C1A22"); });
+              lg.StartPoint(0, 0);
+              lg.EndPoint(0, 1);
+          })
+          .Legend(b => b.Visible(true).Location(LegendLocation.Top))
+          .Tooltips(tooltips =>
+          {
+              tooltips.TooltipsType(TooltipsType.Shared);
+          })
+          .Crosshairs(el =>
+          {
+              el.Enabled(true)
+                  .VerticalLine(line => line.StrokeStyle("#DCDCDC"))
+                  .HorizontalLine(false)
+                  .SnapToDataPoints(true);
+          })
+          .Shadows(false)
+          .MouseInteractionMode(MouseInteractionMode.Zooming)
+          .Axes(axis =>
+          {
+          var dateTimeAxis = axis.DateTimeAxis(Location.Bottom)
+              .ZoomEnabled(false)
+              .Labels(l =>
+              {
+                  l.StringFormat(Model.PeakPorts.DateRangeFormat);
+                  l.Interval(1);
+                  l.HorizontalAlignment(HorizontalAlignment.Center);
+                  l.ShowLastLabel(true);
+              })
+              .Title(Html.Resource("TimeAxisCaption"))
+              .MajorGridLines(gl =>
+              {
+                  gl.StrokeStyle("rgba(220,220,220,0.2)");
+                  gl.Interval(1);
+              })
+              .MajorTickMarks(tm => tm.Visible(false))
+              .IntervalType(Model.PeakPorts.DateRangePeriod)
+              .SkipEmptyDays(false);
+
+          dateTimeAxis.VisibleMinimum( Model.PeakPorts.DateRangePeriod == DateTimeIntervalType.Months
+                                           ? Model.PeakPorts.AxisMinimum.AddDays(-14)
+                                           : Model.PeakPorts.AxisMinimum.AddDays(-3));
+
+    dateTimeAxis.VisibleMaximum(
+        Model.PeakPorts.DateRangePeriod == DateTimeIntervalType.Months
+              ? Model.PeakPorts.AxisMaximum.AddDays(14)
+              : Model.PeakPorts.AxisMaximum.AddDays(3));
+
+    axis.LinearAxis(Location.Left)
+        .MajorGridLines(gl =>
+        {
+            gl.StrokeStyle("rgba(220,220,220,0.2)");
+            gl.Interval(Model.PeakPorts.PortsAxisLabelsInterval);
+        })
+        .Interval(Model.PeakPorts.PortsAxisLabelsInterval)
+        .Title(Html.Resource("PortsAxisCaption"))
+        .VisibleMinimum(0)
+        .VisibleMaximum(Model.PeakPorts.PortsAxisMaximum)
+        .Labels(l =>
+        {
+            l.Interval(Model.PeakPorts.PortsAxisLabelsInterval);
+            l.ShowLastLabel(false);
+        });
+})
+          .SelectionRectangle(el => el.FillStyle("rgba(125,125,125,0.2)")
+                                        .StrokeStyle("gray")
+                                        .LineWidth(1))
+          .Series(series =>
+          {
+              series.Line()
+                  .StrokeStyle("#F1CF01")
+                  .Title(Html.Resource("PortsConfigured"))
+                  .XValues(el => el.Date.Date)
+                  .YValues(el => el.ConnectionsLicensed)
+                  .Markers(false);
+
+              series.Column()
+                  .FillStyle("rgb(20,149,195)")
+                  .Title(Html.Resource("PortsUsedConcurrent"))
+                  .XValues(el => el.Date.Date)
+                  .YValues(el => el.ConnectionsPeak)
+                  //.Labels(l => l.Position(PlacementPosition.Inside).FillStyle(Color.AntiqueWhite))
+                  .Markers(false);
+          })
+          .Render())
+}
+
+<div class="form" id="peak-ports">
+    <div class="boxed boxed-inner no-top-border">
+        <div class="row-fluid">
+            <div class="span12" id="peak-ports-container">
+                @RenderPeakPortTab()
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form always-visible">
+    <div class="boxed-bottom">
+        <div class="row-fluid">
+            @using (Html.BeginForm("PortUsage", "Account", null, FormMethod.Post, new { id = "peak-ports-form" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="form always-visible form-top tab-body">
+                    <div class="row-fluid">
+                        <div class="span" style="width: 180px">
+                            <div class="control-group">
+                                @Html.LabelForWithRequired(m => m.PeakPorts.Plan, new { @class = "control-label" })
+                                <div class="controls">
+                                    @Html.DropDownListFor(m => m.PeakPorts.Plan, Model.PeakPorts.PlanList, new { @class= "narrow" })
+                                    @Html.ValidationMessageFor(m => m.PeakPorts.Plan)
+                                    @Html.HiddenFor(m => m.PeakPorts.Plan, new { Name = "submittedDateRange" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="span" style="width: 180px">
+                            <div class="control-group">
+                                @Html.LabelForWithRequired(m => m.PeakPorts.Channel, new { @class = "control-label" })
+                                <div class="controls">
+                                    @Html.DropDownListFor(m => m.PeakPorts.Channel, Model.PeakPorts.ChannelList, new { @class = "narrow" })
+                                    @Html.ValidationMessageFor(m => m.PeakPorts.Channel)
+                                    @Html.HiddenFor(m => m.PeakPorts.Channel, new { Name = "submittedDateRange" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="span" style="width: 180px">
+                            <div class="control-group">
+                                @Html.LabelForWithRequired(m => m.PeakPorts.DateRange, new { @class = "control-label" })
+                                <div class="controls">
+                                    @Html.DropDownListFor(m => m.PeakPorts.DateRange, Model.PeakPorts.DateRangeList, new { @class = "narrow" })
+                                    @Html.ValidationMessageFor(m => m.PeakPorts.DateRange)
+                                    @Html.HiddenFor(m => m.PeakPorts.DateRange, new { Name = "submittedDateRange" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="span" style="width: 180px">
+                            <div class="control-group">
+                                @Html.LabelForWithRequired(m => m.PeakPorts.From, new { @class = "control-label" })
+                                <div class="controls">
+                                    <div id="@(Html.IdFor(m => m.PeakPorts.From))Picker" class="input-append">
+                                        @Html.TextBoxFor(m => m.PeakPorts.From, new { @class = "input-datetime", data_format = Model.DatePattern, Value = Model.PeakPorts.FromPicker })
+                                        <span class="add-on">
+                                            <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                                        </span>
+                                    </div>
+                                    @Html.ValidationMessageFor(m => m.PeakPorts.From)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="span" style="width: 180px">
+                            <div class="control-group">
+                                @Html.LabelForWithRequired(m => m.PeakPorts.To, new { @class = "control-label" })
+                                <div class="controls">
+                                    <div id="@(Html.IdFor(m => m.PeakPorts.To))Picker" class="input-append">
+                                        @Html.TextBoxFor(m => m.PeakPorts.To, new { @class = "input-datetime", data_format = Model.DatePattern, Value = Model.PeakPorts.ToPicker })
+                                        <span class="add-on">
+                                            <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                                        </span>
+                                    </div>
+                                    @Html.ValidationMessageFor(m => m.PeakPorts.To)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row-fluid">
+                        <button type="submit" class="btn btn-primary js-submit">@Html.GlobalResource("RefreshReport")</button>
+                        <button type="submit" class="btn js-export">@Html.GlobalResource("ExportView")</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    $(function () {
+        var rangeId = '#@Html.IdFor(m => m.PeakPorts.DateRange)';
+        var fromId = '#@(Html.IdFor(m => m.PeakPorts.From))';
+        var fromPicker = fromId + 'Picker';
+        var toId = '#@(Html.IdFor(m => m.PeakPorts.To))';
+        var toPicker = toId + 'Picker';
+
+        $(fromPicker).datetimepicker({ pickTime: false, incrementHoursLabel: "@Html.GlobalResource("IncrementHoursLabel")", incrementMinutesLabel: "@Html.GlobalResource("IncrementMinutesLabel")", incrementSecondsLabel: "@Html.GlobalResource("IncrementSecondsLabel")", decrementHoursLabel: "@Html.GlobalResource("DecrementHoursLabel")", decrementMinutesLabel: "@Html.GlobalResource("DecrementMinutesLabel")", decrementSecondsLabel: "@Html.GlobalResource("DecrementSecondsLabel")" });
+        $(toPicker).datetimepicker({ pickTime: false, incrementHoursLabel: "@Html.GlobalResource("IncrementHoursLabel")", incrementMinutesLabel: "@Html.GlobalResource("IncrementMinutesLabel")", incrementSecondsLabel: "@Html.GlobalResource("IncrementSecondsLabel")", decrementHoursLabel: "@Html.GlobalResource("DecrementHoursLabel")", decrementMinutesLabel: "@Html.GlobalResource("DecrementMinutesLabel")", decrementSecondsLabel: "@Html.GlobalResource("DecrementSecondsLabel")" });
+
+        $('button.js-export')
+            .on('click',
+                function(e) {
+                    $('#peak-ports-form').attr('action', '@Url.Action("PortUsageExport")');
+                });
+        $('button.js-submit')
+            .on('click',
+                function(e) {
+                    $('#peak-ports-form').attr('action', '@Url.Action("PortUsage")');
+                });
+
+        $(rangeId)
+            .change(function(evt) {
+                var val = $('#@Html.IdFor(m => m.PeakPorts.DateRange)').val();
+
+                if (val == '@AccountUsageDateRange.Custom') {
+                    if ($(fromId).prop("disabled") === true) {
+                        $(fromPicker).data("datetimepicker").enable();
+                        $(toPicker).data("datetimepicker").enable();
+                    }
+                } else {
+                    $(fromPicker).data("datetimepicker").disable();
+                    $(toPicker).data("datetimepicker").disable();
+
+                    $(fromPicker).data("datetimepicker").setValue(null);
+                    $(toPicker).data("datetimepicker").setValue(null);
+
+                    $.ajax({
+                        url: '@Url.Action("GetDateRange", new { id = "repl_id" })'.replace(/repl_id/gi, val),
+                        data: null,
+                        contentType: 'application/json',
+                        type: "POST",
+                        success: function(response) {
+                            if (response.isSuccess) {
+                                $(fromPicker)
+                                    .data("datetimepicker")
+                                    .setValue(response.data.from);
+                                $(toPicker)
+                                    .data("datetimepicker")
+                                    .setValue(response.data.to);
+                            }
+                        }
+                    });
+                }
+            });
+
+        $(rangeId).trigger("change");
+
+        var peakChartWrapper = new jqChartWrap({
+            container: '#peak-ports-container',
+            chart: '#peak-ports-chart',
+            chartDateTimePattern: '@Model.PeakPorts.DateRangeFormat',
+            enableTooltips: true,
+            tooltipFormatter: function(chartWrap) {
+                $(chartWrap._args.chart)
+                    .bind('tooltipFormat',
+                        function(e, data) {
+                            var chartDateTimePattern = '@Model.PeakPorts.DateRangeFormat';
+                            var tooltip = "";
+
+                            if ($.isArray(data)) {
+                                var series = data[0];
+                                var seriesUsed = data[1];
+                                if (typeof series.chart != 'undefined') {
+                                    var date = series.chart.stringFormat(series.x, chartDateTimePattern);
+                                    var ports = typeof series.value == "undefined" ? series.y : series.value;
+                                    var used = typeof seriesUsed.value == "undefined" ? seriesUsed.y : seriesUsed.value;
+
+                                    tooltip = '<b>' + used + ' @Html.Resource("PortsUsedConcurrent")</b><br/>'
+                                        + ports + ' @Html.Resource("PortsConfigured")<br/>'
+                                        + date;
+                                }
+
+                                return tooltip;
+                            }
+
+                            return false;
+                        });
+            }
+        });
+
+        $('#peak-tab').on('shown', function (e) {
+            peakChartWrapper.scaleChart();
+        });
+
+        //$('#' + allCharts[0].name).trigger('click');
+    });
+
+</script>

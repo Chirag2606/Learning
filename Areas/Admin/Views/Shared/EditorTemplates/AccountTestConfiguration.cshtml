@@ -1,0 +1,924 @@
+﻿@using Cyara.Domain.Types.Common
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Reflection
+@using Cyara.Domain.Types.Licensing
+@using Cyara.Domain.Types.Roles
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Areas.Admin.Models
+@using Cyara.Web.Portal.Core.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.AccountEditViewModel
+
+<div class="form-grid">
+    <div>
+        <h2>@Html.Resource("SubHeading")</h2>
+    </div>
+
+    <ul id="testsettingstabs" class="nav nav-tabs no-gap">
+        <li class="active">
+            <a data-toggle="tab" href="#voicesettings">@MediaType.Voice.ToLabel()</a>
+        </li>
+        @if (Html.IsLicensed(LicensedFeature.Chat))
+        {
+            <li class="">
+                <a data-toggle="tab" href="#chatsettings">@MediaType.Chat.ToLabel()</a>
+            </li>
+        }
+        @if (Html.IsLicensed(LicensedFeature.Sms))
+        {
+            <li class="">
+                <a data-toggle="tab" href="#smssettings">@MediaType.Sms.ToLabel()</a>
+            </li>
+        }
+        @if (Html.IsLicensed(LicensedFeature.Email))
+        {
+            <li class="">
+                <a data-toggle="tab" href="#emailsettings">@MediaType.Email.ToLabel()</a>
+            </li>
+        }
+        @if (Html.IsLicensed(LicensedFeature.Crawler))
+        {
+            <li class="">
+                <a data-toggle="tab" href="#crawlersettings">@Html.GlobalResource("Crawler")</a>
+            </li>
+        }
+        @if (User.IsInRole(StaticRoles.PlatformAdmin))
+        {
+            <li class="">
+                <a data-toggle="tab" href="#featuresettings">@Html.Resource("Features")</a>
+            </li>
+        }
+        <li class="">
+            <a data-toggle="tab" href="#generalsettings">@Html.GlobalResource("Settings")</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div id="voicesettings" class="tab-pane active">
+            <div class="tab-body">
+                <div class="row-fluid limit">
+                    <div class="control-group span6">
+                        @Html.LabelFor(m => m.RecognitionLanguage, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.DropDownListFor(m => m.RecognitionLanguage, Model.Languages)
+                            @Html.Tooltip(Html.Resource("RecognitionLanguageTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.RecognitionLanguage)
+                        </div>
+                    </div>
+                    <div class="control-group span6">
+                        @Html.LabelFor(m => m.ReplyVoice, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.DropDownListFor(m => m.ReplyVoice, Model.Voices)
+                            @Html.Tooltip(Html.Resource("ReplyVoiceTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.ReplyVoice)
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fluid limit">
+                    <div class="control-group span6">
+                        @Html.LabelFor(m => m.AsrPool, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.DropDownListFor(m => m.AsrPool, Model.AsrPools)
+                            @Html.Tooltip(Html.Resource("AsrPoolTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.AsrPool)
+                        </div>
+                    </div>
+                    <div class="control-group span6">
+                        @Html.LabelFor(m => m.AsrPulsePool, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.DropDownListFor(m => m.AsrPulsePool, Model.AsrPools)
+                            @Html.Tooltip(Html.Resource("AsrPulsePoolTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.AsrPulsePool)
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    @Html.LabelFor(m => m.SpeakerId, new { @class = "control-label" })
+                    <div class="controls">
+                        @Html.RenderConditional(
+                            Model.AccountId.HasValue,
+                            Html.DropDownListFor(m => m.SpeakerId, Model.Speakers, new { @class = "input-xxlarge" }),
+                            Html.DropDownListFor(m => m.SpeakerId, Model.Speakers, new { @class = "input-xxlarge", disabled = "disabled" }))
+                        @Html.Tooltip(Html.Resource("SpeakerTip"), Html.GlobalResource("TipLabel"))
+                    </div>
+                </div>
+                <div id="PreConnectRetryAttemptsContainer" class="control-group">
+                    <label class="checkbox withtooltip inline-label">
+                        @Html.CheckBoxFor(m => m.OverridePreConnectRetryAttemptsPlatformDefault)
+                        @Html.Resource("PreConnectRetryAttemptsLabel")
+                        @Html.TextBoxFor(m => m.PreConnectRetryAttempts, new { @class = "input-mini" })
+                        @Html.Tooltip(Html.Resource("PreConnectRetryAttemptsTip"), Html.GlobalResource("TipLabel"))
+                        @Html.ValidationMessageFor(m => m.PreConnectRetryAttempts)
+                    </label>
+                </div>
+                <div id="TestCaseValidationLimitContainer" class="control-group">
+                    <label class="checkbox withtooltip inline-label">
+                        @Html.CheckBoxFor(m => m.OverridePlatformDefaultTestCaseValidationLimit)
+                        @Html.Resource("OverridePlatformDefaultTestCaseValidationLimit")
+                        @Html.TextBoxFor(m => m.TestCaseValidationLimit, new { @class = "input-mini" })
+                        @Html.Tooltip(Html.Resource("TestCaseValidationLimitTip"), Html.GlobalResource("TipLabel"))
+                        @Html.ValidationMessageFor(m => m.TestCaseValidationLimit)
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label class="checkbox withtooltip inline-label">
+                        @Html.CheckBoxFor(m => m.MOSEnabled)
+                        @Html.Resource("MOSEnabledLabel")
+                        @Html.Tooltip(Html.Resource("MOSEnabledTip"), Html.GlobalResource("TipLabel"))
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label class="checkbox withtooltip inline-label">
+                        @Html.CheckBoxFor(m => m.OutboundEnabled)
+                        @Html.Resource("OutboundEnabledLabel")
+                        @Html.Tooltip(Html.Resource("OutboundEnabledTip"), Html.GlobalResource("TipLabel"))
+                    </label>
+                </div>
+                <div class="row-fluid">
+                    <div class="control-group offset1">
+                        @Html.LabelFor(m => m.ProvisionedNumbers, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.TextBoxFor(m => m.ProvisionedNumbers, new { @class = "input-xxlarge" })
+                            @Html.Tooltip(Html.Resource("ProvisionedNumbersTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.ProvisionedNumbers)
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <div class="control-group offset1">
+                        <label class="checkbox withtooltip inline-label">
+                            @Html.CheckBoxFor(m => m.AllowBlankNumbers)
+                            @Html.Resource("AllowBlankLabel")
+                            @Html.Tooltip(Html.Resource("AllowBlankNumbersTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <label style="margin: 12px; margin-left: 20px; cursor: default">
+                        @Html.GlobalResource("Inbound")
+                    </label>
+                </div>
+                <div class="row-fluid">
+                    <div class="control-group offset1">
+                        @Html.LabelFor(m => m.BlockedNumbers, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.TextBoxFor(m => m.BlockedNumbers, new { @class = "input-xxlarge" })
+                            @Html.Tooltip(Html.Resource("BlockedNumbersTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.BlockedNumbers)
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <div class="control-group offset1">
+                        @Html.LabelFor(m => m.AllowedNumbers, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.TextBoxFor(m => m.AllowedNumbers, new { @class = "input-xxlarge" })
+                            @Html.Tooltip(Html.Resource("AllowedNumbersTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.AllowedNumbers)
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <div class="control-group top-gap-medium">
+                        @Html.LabelForWithRequired(m => m.MaxCaps, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.TextBoxFor(m => m.MaxCaps, new { @class = "input-mini", Value = Model.MaxCaps.ToString() })
+                            @Html.Tooltip(Html.Resource("MaxCapsTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.MaxCaps)
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <div class="control-group top-gap-medium">
+                        @Html.LabelForWithRequired(m => m.ConfidenceThreshold, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.HiddenFor(m => m.ConfidenceThreshold)
+                            <div id="confidenceRange"></div>
+                            @Html.Tooltip(Html.Resource("DefaultConfidenceTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.ConfidenceThreshold)
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <div class="control-group">
+                        @Html.LabelForWithRequired(m => m.MOSThreshold, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.HiddenFor(m => m.MOSThreshold)
+                            <div id="mosRange"></div>
+                            @Html.Tooltip(Html.Resource("DefaultMOSThresholdTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.MOSThreshold)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="chatsettings" class="tab-pane">
+            <div class="tab-body">
+                @{ Html.EnableClientValidation(false); }
+                <div class="control-group">
+                    @Html.LabelFor(m => m.ProvisionedDomains, new { @class = "control-label" })
+                    <div class="controls">
+                        <div class="custom-attributes">
+                            <div class="jq-kvp-row">
+                                <div class="input-append">
+                                    <input type="text" name="@Html.NameFor(m => m.ProvisionedDomain)" id="@Html.IdFor(m => m.ProvisionedDomain)" class="key" placeholder="@Html.GlobalResource("Domain")" />
+                                </div><div class="input-append input-prepend">
+                                    <button aria-label="@Html.GlobalResource("KVPAddButton")" class="btn jq-add-kvp" type="button">
+                                        <i class="icon-plus"></i>
+                                    </button>
+                                </div>
+                                @Html.Tooltip(Html.Resource("ProvisionedDomainsTip"), Html.GlobalResource("TipLabel"))
+                            </div>
+                            @Html.EditorFor(m => m.ProvisionedDomains)
+                        </div>
+                    </div>
+                </div>
+                @{ Html.EnableClientValidation(true); }
+                <div class="control-group">
+                    @Html.LabelForWithRequired(m => m.MaxChatAps, new { @class = "control-label" })
+                    <div class="controls">
+                        @Html.TextBoxFor(m => m.MaxChatAps, new { @class = "input-mini", Value = Model.MaxChatAps.ToString() })
+                        @Html.Tooltip(Html.Resource("MaxApsTip"), Html.GlobalResource("TipLabel"))
+                        @Html.ValidationMessageFor(m => m.MaxChatAps)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="smssettings" class="tab-pane">
+            <div class="tab-body">
+                @{ Html.EnableClientValidation(true); }
+                <div class="control-group">
+                    @Html.LabelForWithRequired(m => m.MaxSmsAps, new { @class = "control-label" })
+                    <div class="controls">
+                        @Html.TextBoxFor(m => m.MaxSmsAps, new { @class = "input-mini", Value = Model.MaxSmsAps.ToString() })
+                        @Html.Tooltip(Html.Resource("MaxApsTip"), Html.GlobalResource("TipLabel"))
+                        @Html.ValidationMessageFor(m => m.MaxSmsAps)
+                    </div>
+                </div>
+                <div class="row-fluid" id="smsNumberPanel">
+                    <div class="control-group">
+                        <div class="bottom-gap-small wide-popover" id="popover-smsmobile-container">
+                            <button class="btn js-create-smsnumber" disabled="@(Model.ReadOnly ? "disabled" : null)">@Html.Resource("AddSmsNumber")</button>
+                            <span class="error-panel"></span>
+                        </div>
+
+                        <table class="table-edit top-align table-striped table-hover" id="smsNumberGrid">
+                            <colgroup>
+                                <col />
+                                <col style="width: 20%;" />
+                                <col style="width: 20%;" />
+                                <col style="width: 10%;" />
+                                <col style="width: 15%;" />
+                                <col style="width: 15%;" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>@Html.GlobalResource("TableHeading_Mobile")</th>
+                                    <th>@Html.GlobalResource("TableHeading_Provider")</th>
+                                    <th>@Html.GlobalResource("TableHeading_Server")</th>
+                                    <th>@Html.GlobalResource("TableHeading_Port")</th>
+                                    <th>@Html.GlobalResource("TableHeading_Username")</th>
+                                    <th>@Html.GlobalResource("TableHeading_Password")</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+
+                        <div class="control-group error">@Html.ValidationMessage("SmsMobiles")</div>
+                        <div id="smsNumberGrid-error" class="error-panel"></div>
+                        <div class="clearfix"></div>
+                        <div class="bottom-gap-small pull-left">
+                            <button class="btn js-download">@Html.Resource("Download")</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <div class="control-group">
+                        @Html.LabelFor(m => m.MobileWhitelist, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.TextBoxFor(m => m.MobileWhitelist, new { @class = "input-xxlarge", placeholder = @Html.Resource("MobileWhitelistPlaceholder") })
+                            @Html.Tooltip(Html.Resource("MobileWhitelistTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.MobileWhitelist)
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden-validation" id="smsNumbersHiddenInput">
+                    @Html.EditorFor(x => x.SmsMobiles, new { hidePassword = Model.ReadOnly })
+                </div>
+                @{ Html.EnableClientValidation(true); }
+
+                <script id="template-smsnumber-row" type="text/x-tmpl">
+                    <tr data-entityId="{%=o.SmsNumberId %}">
+                        <td><a class="edtNumber" data-disabled="{% if (o.ReadOnly) { %}true{% } else { %}false{% } %}">{%=o.Number %}</a></td>
+                        <td><a class="edtProvider" data-value="{%=o.SmsGatewayProvider %}" data-disabled="{% if (o.ReadOnly) { %}true{% } else { %}false{% } %}">{%=o.SmsGatewayProviderLabel %}</a></td>
+                        <td><a class="edtServer" data-disabled="{% if (o.ReadOnly || o.DisableServerFields) { %}true{% } else { %}false{% } %}">{%=o.SmppServer %}</a></td>
+                        <td><a class="edtPort" data-disabled="{% if (o.ReadOnly || o.DisableServerFields) { %}true{% } else { %}false{% } %}">{%=o.SmppPort %}</a></td>
+                        <td><a class="edtUsername" data-disabled="{% if (o.ReadOnly || o.DisableServerFields) { %}true{% } else { %}false{% } %}">{%=o.Username %}</a></td>
+                        <td><a class="edtPassword" data-disabled="{% if (o.ReadOnly || o.DisableServerFields) { %}true{% } else { %}false{% } %}">@(Model.ReadOnly ? "********" : "{%=o.Password %}")</a></td>
+                    </tr>
+                </script>
+
+                <script id="template-create-smsnumber" type="x-text/template">
+                    <form id="newSmsNumberForm">
+                        <div class="row-fluid">
+                            <div class="span6">
+                                <div class="control-group">
+                                    @Html.LabelForWithRequired(m => m.SmsMobileEdit.Number, new { @class = "control-label" })
+                                    <div class="controls">
+                                        @Html.TextBoxFor(m => m.SmsMobileEdit.Number)
+                                        @Html.ValidationMessageFor(m => m.SmsMobileEdit.Number)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row-fluid">
+                            <div class="span6">
+                                <div class="control-group">
+                                    @Html.LabelForWithRequired(m => m.SmsMobileEdit.SmsGatewayProvider, new { @class = "control-label" })
+                                    <div class="controls">
+                                        @Html.DropDownListFor(m => m.SmsMobileEdit.SmsGatewayProvider, Model.SmsProviders)
+                                        @Html.ValidationMessageFor(m => m.SmsMobileEdit.SmsGatewayProvider)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row-fluid">
+                            <div class="span6">
+                                <div class="control-group">
+                                    @Html.LabelFor(m => m.SmsMobileEdit.SmppServer, new { @class = "control-label" })
+                                    <div class="controls">
+                                        @Html.TextBoxFor(m => m.SmsMobileEdit.SmppServer, new { disabled = "disabled" })
+                                        @Html.ValidationMessageFor(m => m.SmsMobileEdit.SmppServer)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row-fluid">
+                            <div class="span6">
+                                <div class="control-group">
+                                    @Html.LabelFor(m => m.SmsMobileEdit.SmppPort, new { @class = "control-label" })
+                                    <div class="controls">
+                                        @Html.TextBoxFor(m => m.SmsMobileEdit.SmppPort, new { @class = "input-mini", disabled = "disabled" })
+                                        @Html.ValidationMessageFor(m => m.SmsMobileEdit.SmppPort)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row-fluid">
+                            <div class="span6">
+                                <div class="control-group">
+                                    @Html.LabelFor(m => m.SmsMobileEdit.Username, new { @class = "control-label" })
+                                    <div class="controls">
+                                        @Html.TextBoxFor(m => m.SmsMobileEdit.Username, new { disabled = "disabled" })
+                                        @Html.ValidationMessageFor(m => m.SmsMobileEdit.Username)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row-fluid">
+                            <div class="span6">
+                                <div class="control-group">
+                                    @Html.LabelFor(m => m.SmsMobileEdit.Password, new { @class = "control-label" })
+                                    <div class="controls">
+                                        @Html.TextBoxFor(m => m.SmsMobileEdit.Password, new { disabled = "disabled" })
+                                        @Html.ValidationMessageFor(m => m.SmsMobileEdit.Password)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-popup-save">@Html.Resource("AddSmsNumber")</button>&nbsp;
+                        <button class="btn btn-popup-cancel">@Html.GlobalResource("Cancel")</button>
+                    </form>
+                </script>
+
+                <script type="text/javascript">
+$(function() {
+    var smsNumberGrid = new SmsNumberGrid({
+        grid: '#smsNumberGrid',
+        disabled: @(Model.ReadOnly ? "true" : "false"),
+        disableDuringPopupover: [
+            'button.js-create-smsnumber'
+        ],
+        download: '.js-download',
+        smsNumberCreateButtonResource: ['button.js-create-smsnumber', '@Html.Resource("AddSmsNumber").ToJavascriptSafeString()'],
+        newSmsNumberForm: '#newSmsNumberForm',
+        localContext: '#smsPanel',
+        providerOptions: JSON.parse(@Html.RawJsonString(Model.SmsProviderOptionsScript)),
+        submit: 'button.btn-submit',
+        editableFieldsSelector: '#smsNumbersHiddenInput',
+        deleteSmsNumberToolTip: '@Html.Resource("DeleteSmsNumberToolTip").ToJavascriptSafeString()',
+        emptyText: '@Html.GlobalResource("Empty").ToJavascriptSafeString()',
+        editableErrorLabelSuffix: '@Html.Resource("SmsNumber").ToJavascriptSafeString()',
+        form: '@ViewData["FormSelector"]',
+        readOnly: @Model.ReadOnly.ToJavaScript(),
+        model: {
+            @(ReflectOn<SmsMobileViewData>.GetMember(p => p.SmsNumberId).Name): 0,
+            @(ReflectOn<SmsMobileViewData>.GetMember(p => p.Number).Name): '',
+            @(ReflectOn<SmsMobileViewData>.GetMember(p => p.SmsGatewayProvider).Name): '',
+            @(ReflectOn<SmsMobileViewData>.GetMember(p => p.SmppServer).Name): '',
+            @(ReflectOn<SmsMobileViewData>.GetMember(p => p.SmppPort).Name): 0,
+            @(ReflectOn<SmsMobileViewData>.GetMember(p => p.Username).Name): '',
+            @(ReflectOn<SmsMobileViewData>.GetMember(p => p.Password).Name): ''
+        },
+        namePrefix: '@Html.NameFor(m => m.SmsMobiles)',
+        rowCount: @(Model.SmsMobiles != null ? Model.SmsMobiles.Count() : 0),
+        editableUrl: '@Url.Action("SmsNumbers", "Editable", new { Area = "" })',
+
+        fields: {
+            entityId: '@(ReflectOn<SmsMobileViewData>.GetMember(p => p.SmsNumberId).Name)',
+            number: '@(ReflectOn<SmsMobileViewData>.GetMember(p => p.Number).Name)',
+            provider: '@(ReflectOn<SmsMobileViewData>.GetMember(p => p.SmsGatewayProvider).Name)',
+            server: '@(ReflectOn<SmsMobileViewData>.GetMember(p => p.SmppServer).Name)',
+            port: '@(ReflectOn<SmsMobileViewData>.GetMember(p => p.SmppPort).Name)',
+            username: '@(ReflectOn<SmsMobileViewData>.GetMember(p => p.Username).Name)',
+            password: '@(ReflectOn<SmsMobileViewData>.GetMember(p => p.Password).Name)'
+        },
+
+        formFields: {
+            number: '#@Html.IdFor(m => m.SmsMobileEdit.Number)',
+            provider: '#@Html.IdFor(m => m.SmsMobileEdit.SmsGatewayProvider)',
+            server: '#@Html.IdFor(m => m.SmsMobileEdit.SmppServer)',
+            port: '#@Html.IdFor(m => m.SmsMobileEdit.SmppPort)',
+            username: '#@Html.IdFor(m => m.SmsMobileEdit.Username)',
+            password: '#@Html.IdFor(m => m.SmsMobileEdit.Password)'
+        },
+
+        labels: {
+            number: '@Html.GlobalResource("TableHeading_Mobile").ToJavascriptSafeString()',
+            provider: '@Html.GlobalResource("TableHeading_Provider").ToJavascriptSafeString()',
+            server: '@Html.GlobalResource("TableHeading_Server").ToJavascriptSafeString()',
+            port: '@Html.GlobalResource("TableHeading_Port").ToJavascriptSafeString()',
+            password: '@Html.GlobalResource("TableHeading_Password").ToJavascriptSafeString()',
+            username: '@Html.GlobalResource("TableHeading_Username").ToJavascriptSafeString()'
+        }
+    });
+});
+                </script>
+            </div>
+        </div>
+        <div id="emailsettings" class="tab-pane">
+            <div class="tab-body">
+                @{ Html.EnableClientValidation(true); }
+                <div class="row-fluid" id="mailboxPanel">
+                    <div class="control-group">
+                        @Html.LabelFor(m => m.Mailboxes, new { @class = "control-label" })
+
+                        <div class="bottom-gap-small wide-popover" id="popover-mailbox-container">
+                            <button class="btn js-create-mailbox" disabled="@(Model.ReadOnly ? "disabled" : null)">@Html.GlobalResource("AddEmailAccount")</button>
+                            <span class="error-panel"></span>
+                        </div>
+
+                        <table class="table-edit top-align table-striped table-hover" id="mailboxGrid">
+                            <colgroup>
+                                <col style="width: 35%;" />
+                                <col style="width: 35%;" />
+                                <col style="width: 30%;" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>@Html.GlobalResource("TableHeading_Email")</th>
+                                    <th>@Html.GlobalResource("TableHeading_Username")</th>
+                                    <th>@Html.GlobalResource("TableHeading_Password")</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+
+                        <div class="control-group error">@Html.ValidationMessage("Mailboxes")</div>
+                        <div id="mailboxGrid-error" class="error-panel"></div>
+
+                        <div class="clearfix"></div>
+                    </div>
+                </div>
+
+                <div class="hidden-validation" id="mailboxesHiddenInput">
+                    @Html.EditorFor(x => x.Mailboxes, new { hidePassword = Model.ReadOnly })
+                </div>
+                @{ Html.EnableClientValidation(true); }
+                <div class="control-group">
+                    @Html.LabelForWithRequired(m => m.MaxEmailAps, new { @class = "control-label" })
+                    <div class="controls">
+                        @Html.TextBoxFor(m => m.MaxEmailAps, new { @class = "input-mini", Value = Model.MaxEmailAps.ToString() })
+                        @Html.Tooltip(Html.Resource("MaxApsTip"), Html.GlobalResource("TipLabel"))
+                        @Html.ValidationMessageFor(m => m.MaxEmailAps)
+                    </div>
+                </div>
+
+                <script id="template-mailbox-row" type="text/x-tmpl">
+                    <tr data-entityId="{%=o.MailboxAccountId %}" data-inuse="{%=o.MailboxInUse %}">
+                        <td><a class="edtEmail" data-disabled="@(Model.ReadOnly ? "true" : null)">{%=o.EmailAddress %}</a></td>
+                        <td><a class="edtUsername" data-disabled="@(Model.ReadOnly ? "true" : null)">{%=o.MailboxUsername %}</a></td>
+                        <td><a class="edtPassword" data-disabled="@(Model.ReadOnly ? "true" : null)">@(Model.ReadOnly ? "********" : "{%=o.MailboxPassword %}")</a></td>
+                        <td style="display:none"><a class="edtMailboxAccountId" data-value="{%=o.MailboxAccountId %}"></a></td>
+                    </tr>
+                </script>
+
+                <script id="template-create-mailbox" type="x-text/template">
+                    <form id="newMailboxForm">
+                        <div class="row-fluid">
+                            <div class="span6">
+                                <div class="control-group">
+                                    @Html.LabelForWithRequired(m => m.MailboxEdit.EmailAddress, new { @class = "control-label label-server-name" })
+                                    <div class="controls">
+                                        @Html.TextBoxFor(m => m.MailboxEdit.EmailAddress)
+                                        @Html.ValidationMessageFor(m => m.MailboxEdit.EmailAddress)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row-fluid">
+                            <div class="span6">
+                                <div class="control-group">
+                                    @Html.LabelForWithRequired(m => m.MailboxEdit.MailboxUsername, new { @class = "control-label" })
+                                    <div class="controls">
+                                        @Html.TextBoxFor(m => m.MailboxEdit.MailboxUsername)
+                                        @Html.ValidationMessageFor(m => m.MailboxEdit.MailboxUsername)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row-fluid">
+                            <div class="span6">
+                                <div class="control-group">
+                                    @Html.LabelForWithRequired(m => m.MailboxEdit.MailboxPassword, new { @class = "control-label" })
+                                    <div class="controls">
+                                        @Html.TextBoxFor(m => m.MailboxEdit.MailboxPassword)
+                                        @Html.ValidationMessageFor(m => m.MailboxEdit.MailboxPassword)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-popup-save">@Html.GlobalResource("AddEmailAccount")</button>&nbsp;
+                        <button class="btn btn-popup-cancel">@Html.GlobalResource("Cancel")</button>
+                    </form>
+                </script>
+
+                <script type="text/javascript">
+$(function() {
+    var mailboxGrid = new EmailMailboxAccountGrid({
+        grid: '#mailboxGrid',
+        disabled: @(Model.ReadOnly ? "true" : "false"),
+        disableDuringPopupover: [
+            'button.js-create-mailbox'
+        ],
+        mailboxCreateButtonResource: ['button.js-create-mailbox', '@Html.Resource("NewMailbox").ToJavascriptSafeString()'],
+        newMailboxForm: '#newMailboxForm',
+        localContext: '#mailboxPanel',
+        submit: 'button.btn-submit',
+        editableFieldsSelector: '#mailboxesHiddenInput',
+        deleteMailboxToolTip: '@Html.Resource("DeleteMailboxToolTip").ToJavascriptSafeString()',
+        emptyText: '@Html.GlobalResource("Empty").ToJavascriptSafeString()',
+        editableErrorLabelSuffix: '@Html.GlobalResource("EmailAccount").ToJavascriptSafeString()',
+        form: '@ViewData["FormSelector"]',
+        model: { MailboxAccountId: 0, AccountId: 0, EmailAddress: '', MailboxUsername: '', MailboxPassword: '' },
+        namePrefix: '@Html.NameFor(m => m.Mailboxes)',
+        rowCount: @(Model.Mailboxes != null ? Model.Mailboxes.Count() : 0),
+        editableUrl: '@Url.Action("AccountMailboxes", "Editable", new { Area = "" })',
+
+        fields: {
+            entityId: '@(ReflectOn<EmailMailboxAccountViewData>.GetMember(p => p.MailboxAccountId).Name)',
+            emailAddress: '@(ReflectOn<EmailMailboxAccountViewData>.GetMember(p => p.EmailAddress).Name)',
+            mailboxPassword: '@(ReflectOn<EmailMailboxAccountViewData>.GetMember(p => p.MailboxPassword).Name)',
+            mailboxUsername: '@(ReflectOn<EmailMailboxAccountViewData>.GetMember(p => p.MailboxUsername).Name)'
+        },
+
+        formFields: {
+            emailAddress: '#@Html.IdFor(m => m.MailboxEdit.EmailAddress)',
+            mailboxPassword: '#@Html.IdFor(m => m.MailboxEdit.MailboxPassword)',
+            mailboxUsername: '#@Html.IdFor(m => m.MailboxEdit.MailboxUsername)'
+        },
+
+        labels: {
+            emailAddress: '@Html.GlobalResource("TableHeading_Email").ToJavascriptSafeString()',
+            mailboxPassword: '@Html.GlobalResource("TableHeading_Password").ToJavascriptSafeString()',
+            mailboxUsername: '@Html.GlobalResource("TableHeading_Username").ToJavascriptSafeString()',
+        }
+    });
+});
+                </script>
+            </div>
+        </div>
+        <div id="crawlersettings" class="tab-pane">
+            <div class="tab-body">
+                <div class="control-group">
+                    @Html.LabelFor(m => m.EnableCrawler, new { @class = "control-label" })
+                    <div class="controls">
+                        <label class="checkbox inline-label">
+                            @Html.CheckBoxFor(m => m.EnableCrawler)
+                            @Html.Resource("EnableCrawlerLabel")
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    @Html.LabelFor(m => m.AllowSpeechReplies, new { @class = "control-label" })
+                    <div class="controls">
+                        <label class="checkbox inline-label">
+                            @Html.CheckBoxFor(m => m.AllowSpeechReplies)
+                            @Html.Resource("AllowSpeechRepliesLabel")
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="featuresettings" class="tab-pane">
+            <div class="tab-body">
+                <div class="control-group">
+                    <label class="checkbox withtooltip inline-label">
+                        @Html.CheckBoxFor(m => m.RunLoadCampaignWithoutBooking, Html.IsLicensed(LicensedFeature.LoadTestCalendar) ? null : new { disabled = "disabled" })
+                        @Html.Resource("RunLoadCampaignWithoutBookingLabel")
+                        @Html.Tooltip(Html.Resource("RunLoadCampaignWithoutBookingTip"), Html.GlobalResource("TipLabel"))
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @Html.CheckBoxFor(m => m.AllowAccountUsageReport, Html.IsLicensed(LicensedFeature.AccountUsageReports) ? null : new { disabled = "disabled" })
+                            @Html.Resource("AllowAccountUsageReportLabel")
+                            @Html.Tooltip(Html.Resource("AllowAccountUsageReportTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @Html.CheckBoxFor(m => m.EnableServices)
+                            @Html.Resource("EnableServicesLabel")
+                            @Html.Tooltip(Html.Resource("EnableServicesTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @{ var attributes = Model.IntegrationHubLicensed ? null : new { disabled = "disabled" }; }
+                            @Html.CheckBoxFor(m => m.EnableIntegrationHub, attributes)
+                            @Html.Resource("EnableIntegrationHubLabel")
+                            @Html.Tooltip(Html.Resource("EnableIntegrationHubTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @{ var insightsAttributes = Model.CxInsightsLicensed ? null : new { disabled = "disabled" }; }
+                            @Html.CheckBoxFor(m => m.EnableCxInsights, insightsAttributes)
+                            @Html.Resource("EnableCxInsightsLabel")
+                            @Html.Tooltip(Html.Resource("EnableCxInsightsTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @{ var transcriptionAttributes = Model.DynamicTranscriptionLicensed ? null : new { disabled = "disabled" }; }
+                            @Html.CheckBoxFor(m => m.EnableDynamicTranscription, transcriptionAttributes)
+                            @Html.Resource("EnableDynamicTranscriptionLabel")
+                            @Html.Tooltip(Html.Resource("EnableDynamicTranscriptionTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @Html.CheckBoxFor(m => m.EnablePolqa)
+                            @Html.Resource("EnablePolqaLabel")
+                            @Html.Tooltip(Html.Resource("EnablePolqaTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @{ var liveVQAttributes = Model.LiveVQLicensed ? null : new { disabled = "disabled" }; }
+                            @Html.CheckBoxFor(m => m.EnableLiveVQ, liveVQAttributes)
+                            @Html.Resource("EnableLiveVQLabel")
+                            @Html.Tooltip(Html.Resource("EnableLiveVQTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+                <div class="offset1" id="livevqsection">
+                    <div class="control-group">
+                        @Html.LabelForWithRequired(m => m.LiveVQPortalUrl, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.TextBoxFor(m => m.LiveVQPortalUrl, new { @class = "input-largedouble" })
+                            @Html.ValidationMessageFor(m => m.LiveVQPortalUrl)
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        @Html.LabelForWithRequired(m => m.LiveVQClientId, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.TextBoxFor(m => m.LiveVQClientId)
+                            @Html.ValidationMessageFor(m => m.LiveVQClientId)
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @{ var cyaraPhoneAttributes = Model.CyaraPhoneLicensed ? null : new { disabled = "disabled" }; }
+                            @Html.CheckBoxFor(m => m.EnableCyaraPhone, cyaraPhoneAttributes)
+                            @Html.Resource("EnableCyaraPhoneLabel")
+                            @Html.Tooltip(Html.Resource("EnableCyaraPhoneTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @{ var cyaraTfnSweepAttributes = Model.TfnSweepLicensed ? null : new { disabled = "disabled" }; }
+                            @Html.CheckBoxFor(m => m.EnableTfnSweep, cyaraTfnSweepAttributes)
+                            @Html.Resource("EnableTfnSweepLabel")
+                            @Html.Tooltip(Html.Resource("EnableTfnSweepTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @{ var cyaraAgentEndpointSettingsAttrib = Model.EndpointsLicensed ? null : new { disabled = "disabled" }; }
+                            @Html.CheckBoxFor(m => m.EnableEndpoints, cyaraAgentEndpointSettingsAttrib)
+                            @Html.Resource("EnableEndpointsLabel")
+                            @Html.Tooltip(Html.Resource("EnableEndpointsTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        @Html.LabelFor(m => m.EnhancedConfidenceAlgorithmType, new { @class = "control-label" })
+                        <div class="controls">
+                            @Html.DropDownListFor(m => m.EnhancedConfidenceAlgorithmType, Model.EnhancedConfidenceAlgorithmTypes)
+                            @Html.Tooltip(Html.Resource("EcaTypeTip"), Html.GlobalResource("TipLabel"))
+                            @Html.ValidationMessageFor(m => m.EnhancedConfidenceAlgorithmType)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="generalsettings" class="tab-pane">
+            <div class="tab-body">
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox withtooltip inline-label">
+                            @Html.CheckBoxFor(m => m.IgnoreCertificateErrors)
+                            @Html.Resource("IgnoreCertificateErrors")
+                            @Html.Tooltip(Html.Resource("IgnoreCertificateErrorsTip"), Html.GlobalResource("TipLabel"))
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+     </div>
+</div>
+<script type="text/javascript">
+    var modelIsReadonly = @(Model.ReadOnly ? "true" : "false");
+
+    $(function() {
+        var confidenceRange = new CyaraRangeSlider(
+            '#confidenceRange',
+            0.0,
+            100.0,
+            0.1,
+            6,
+            @Json.Encode((float)Math.Round(double.Parse(Model.ConfidenceThreshold.Split('/').FirstOrDefault()), 2)),
+            @Json.Encode((float)Math.Round(double.Parse(Model.ConfidenceThreshold.Split('/').LastOrDefault()), 2)),
+            'fsg',
+            true,
+            'confidenceMin',
+            'confidenceMax',
+            '#@Html.IdFor(s => s.ConfidenceThreshold)', [
+            '@Html.GlobalResource("Failure")',
+            '@Html.GlobalResource("Satisfactory")',
+            '@Html.GlobalResource("Success")'],
+            422,
+            1);
+
+        var mosRange = new CyaraRangeSlider(
+            '#mosRange',
+            1.0,
+            5.0,
+            0.1,
+            3,
+            @Json.Encode((float)Math.Round(double.Parse(Model.MOSThreshold.Split('/').FirstOrDefault()), 2)),
+            @Json.Encode((float)Math.Round(double.Parse(Model.MOSThreshold.Split('/').LastOrDefault()), 2)),
+            'fsg',
+            false,
+            'mosMin',
+            'mosMax',
+            '#@Html.IdFor(s => s.MOSThreshold)', [
+                '@Html.GlobalResource("Failure")',
+                '@Html.GlobalResource("Satisfactory")',
+            '@Html.GlobalResource("Success")'],
+            422);
+
+        if (modelIsReadonly) {
+            confidenceRange.disable();
+            mosRange.disable();
+            // chat editor
+            $(".custom-attributes button.jq-add-kvp").prop('disabled', true);
+            $(".custom-attributes button.jq-remove-kvp").prop('disabled', true);
+        } else {
+            var outboundHandler = function() {
+                if ($outbound.is(':checked')) {
+                    $('#@Html.IdFor(m => m.ProvisionedNumbers)').prop('disabled', false);
+                    $('#@Html.IdFor(m => m.AllowBlankNumbers)').prop('disabled', false);
+                } else {
+                    $('#@Html.IdFor(m => m.ProvisionedNumbers)').prop('disabled', true);
+                    $('#@Html.IdFor(m => m.AllowBlankNumbers)').prop('disabled', true);
+                }
+            };
+
+            var $outbound = $('#@Html.IdFor(m => m.OutboundEnabled)')
+                .on('click',
+                    function(e) {
+                        outboundHandler();
+                    });
+            outboundHandler();
+
+            var enableCrawler = function() {
+                if (!$('#@Html.IdFor(m => m.EnableCrawler)').is(':checked')) {
+                    $('#@Html.IdFor(m => m.AllowSpeechReplies)').prop('disabled', true);
+                    return;
+                }
+
+                $('#@Html.IdFor(m => m.AllowSpeechReplies)').prop('disabled', false);
+            };
+            $('#@Html.IdFor(m => m.EnableCrawler)')
+                .on('change',
+                    function(e) {
+                        enableCrawler();
+                    });
+            enableCrawler();
+
+            var ca = new CustomAttributes({
+                selector: '.custom-attributes',
+                keyInput: '#@Html.IdFor(m => m.ProvisionedDomain)',
+                onlyKey: true,
+                rowCount: @Model.ProvisionedDomains.Count,
+                template:
+                    '<div class="jq-kvp-row"><div class="input-append"><input type="text" class="key" name="ProvisionedDomains[{0}].Key" value="{1}" /><button class="btn jq-remove-kvp"><i class="icon-minus"></i></button></div>'
+            });
+            @{
+                var mbVal = ViewData.ModelState.Where(x => x.Key == "Mailboxes").Select(x => x.Value).FirstOrDefault(x => x.Errors.Count > 0);
+            }
+
+            if ($('input[id^=ProvisionedDomains]').hasClass('input-validation-error')) {
+                setTimeout(function() { $('#testsettingstabs a[href="#chatsettings"]').tab('show'); }, 100);
+            } else if ($('#smsNumbersHiddenInput span[data-valmsg-for]:not(:empty)').length > 0) {
+                setTimeout(function() { $('#testsettingstabs a[href="#smssettings"]').tab('show'); }, 100);
+            } else if (@(mbVal != null ? "true" : "false")) {
+                setTimeout(function() { $('#testsettingstabs a[href="#emailsettings"]').tab('show'); }, 100);
+            } else if ($('input[id^=LiveVQ]').hasClass('input-validation-error')) {
+                setTimeout(function () { $('#testsettingstabs a[href="#featuresettings"]').tab('show'); }, 100);
+            }
+
+            var preConnectEnableDisableHandler = function (disableTextBox, id) {
+                $('#' + id).prop('disabled', disableTextBox);
+                if (disableTextBox) {
+                    $('#' + id + 'Container').removeClass('error');
+                    var val = $('span[data-valmsg-for=' + id + ']');
+                    val.removeClass('field-validation-error');
+                    val.html('');
+                } else {
+                    $('#' + id).valid();
+                }
+
+            }
+
+            $('input[name="OverridePreConnectRetryAttemptsPlatformDefault"]').each(function () {
+                $(this).on('click', function () {
+                    preConnectEnableDisableHandler(!$(this).is(':checked'), '@Html.IdFor(m => m.PreConnectRetryAttempts)');
+                });
+            });
+            preConnectEnableDisableHandler(@((!Model.OverridePreConnectRetryAttemptsPlatformDefault).ToLowerString()), '@Html.IdFor(m => m.PreConnectRetryAttempts)');
+
+            $('input[name="OverridePlatformDefaultTestCaseValidationLimit"]').each(function () {
+                $(this).on('click', function () {
+                    preConnectEnableDisableHandler(!$(this).is(':checked'), '@Html.IdFor(m => m.TestCaseValidationLimit)');
+                });
+            });
+            preConnectEnableDisableHandler(@((!Model.OverridePlatformDefaultTestCaseValidationLimit).ToLowerString()), '@Html.IdFor(m => m.TestCaseValidationLimit)');
+
+            var toggleVQFields = function (element) {
+                var fields = $('#livevqsection input');
+                var enableVQ = (typeof element == "undefined") ? $enableLiveVQ : $(element);
+
+                if (enableVQ.is(':checked')) {
+                    fields.removeAttr('disabled');
+                } else {
+                    fields.attr('disabled', 'disabled');
+                }
+            }
+            var $enableLiveVQ = $('#@Html.IdFor(m => m.EnableLiveVQ)');
+            $enableLiveVQ.on('change',
+                function (e) {
+                    toggleVQFields(e.target);
+                });
+            toggleVQFields();
+
+        }});
+</script>

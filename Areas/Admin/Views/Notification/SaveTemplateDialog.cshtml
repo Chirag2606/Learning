@@ -1,0 +1,15 @@
+﻿@using Cyara.Shared.Web.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.Notification.TemplateViewModel
+
+<script type="text/tmpl-x" id="saveTemplateDialog">
+    <form id="saveTemplateForm">
+        <div class="control-group popover-content">
+            @Html.LabelForWithRequired(m => m.TemplateName, new { @class = "control-label" })
+            <div class="controls">
+                @Html.TextBoxFor(m => m.TemplateName, new { @class= "full-width" })
+                @Html.ValidationMessageFor(m => m.TemplateName)
+                <span id='templateSaveError' class='error-text'></span>
+            </div>
+        </div>
+    </form>
+</script>

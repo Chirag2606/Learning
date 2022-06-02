@@ -1,0 +1,120 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.IdentityProvider.IdentityProviderViewModel
+
+<div class="form-head">
+    <div class="pull-right form-head-info">
+        <div class="switch switch-large" data-on="success" data-off="danger" data-on-label="@Html.GlobalResource("Active").ToUpper()" data-off-label="@Html.GlobalResource("Inactive").ToUpper()">
+            @Html.CheckBoxFor(m => m.Active)
+        </div>
+    </div>
+    <h2>@Html.Resource("SubHeading")</h2>
+</div>
+<div class="form-body">
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.LoginProvider, new { @class = "control-label" })
+        <div class="controls">
+            @Html.DropDownListFor(m => m.LoginProvider, Model.LoginProviderList)
+            @Html.ValidationMessageFor(m => m.LoginProvider)
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.ProviderId, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.ProviderId)
+            @Html.Tooltip(Html.Resource("ProviderIdTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.ProviderId)
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.Name, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.Name, new { @class = "input-large" })
+            @Html.Tooltip(Html.Resource("NameTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.Name)
+        </div>
+    </div>
+</div>
+<div class="form-subhead no-overflow">
+    <h2 class="pull-left">@Html.Resource("SamlOptions")</h2>
+</div>
+<div class="form-body">
+    <div class="control-group">
+        <label class="control-label">@Html.DisplayNameFor(m => m.AssertionConsumerService) <span title="@Html.Resource("CopyThisValue")" data-copytarget="@Html.IdFor(m => m.AssertionConsumerService)"><i class="icon-share"></i></span></label>
+        <div class="controls">
+            @Html.TextBoxFor(m => m.AssertionConsumerService, new { @class = "input-xxlarge", disabled = "disabled" })    
+            @Html.Tooltip(Html.Resource("AssertionConsumerServiceTip"), Html.GlobalResource("TipLabel"))
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">@Html.DisplayNameFor(m => m.ServiceProviderEntity) <span title="@Html.Resource("CopyThisValue")" data-copytarget="@Html.IdFor(m => m.ServiceProviderEntity)"><i class="icon-share"></i></span></label>
+        <div class="controls">
+            @Html.TextBoxFor(m => m.ServiceProviderEntity, new { @class = "input-xxlarge", disabled = "disabled" })
+            @Html.Tooltip(Html.Resource("ServiceProviderEntityTip"), Html.GlobalResource("TipLabel"))
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.IdentityProviderUrl, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.IdentityProviderUrl, new { @class = "input-xxlarge" })
+            @Html.Tooltip(Html.Resource("IdentityProviderUrlTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.IdentityProviderUrl)
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.SingleSignOnUrl, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.SingleSignOnUrl, new { @class = "input-xxlarge" })
+            @Html.Tooltip(Html.Resource("SingleSignOnUrlTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.SingleSignOnUrl)
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.Certificate, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextAreaFor(m => m.Certificate, columns: 30, rows: 6, htmlAttributes: new { @class = "input-xxlarge" })
+            @Html.Tooltip(Html.Resource("CertificateTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.Certificate)
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelFor(m => m.MetadataUrl, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(m => m.MetadataUrl, new { @class = "input-xxlarge" })
+            @Html.Tooltip(Html.Resource("MetadataUrlTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.MetadataUrl)
+        </div>
+    </div>
+    <div class="control-group">
+        @Html.LabelFor(m => m.Metadata, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextAreaFor(m => m.Metadata, columns: 30, rows: 6, htmlAttributes: new { @class = "input-xxlarge" })
+            @Html.Tooltip(Html.Resource("MetadataTip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.Metadata)
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $('[data-copytarget]').on('click',
+        function(e) {
+            var target = $(e.target).closest('span').attr('data-copytarget');
+
+            try {
+                var copyText = document.getElementById(target);
+
+                copyText.disabled = false;
+                copyText.focus();
+                copyText.select();
+                
+                document.execCommand("copy");
+                copyText.disabled = true;
+
+                ShowMessage.Success('@Html.Resource("SuccessfullyCopied").ToJavascriptSafeString()');
+
+            } catch (err) {
+
+            }
+        });
+</script>

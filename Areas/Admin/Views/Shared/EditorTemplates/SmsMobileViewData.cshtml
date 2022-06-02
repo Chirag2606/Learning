@@ -1,0 +1,15 @@
+﻿@model Cyara.Web.Portal.Areas.Admin.Models.SmsMobileViewData
+
+@Html.HiddenFor(m => m.Number)
+@Html.HiddenFor(m => m.SmsGatewayProvider)
+@Html.HiddenFor(m => m.Password)
+@Html.HiddenFor(m => m.SmppPort)
+@Html.HiddenFor(m => m.SmppServer)
+@Html.HiddenFor(m => m.Username)
+@Html.HiddenFor(m => m.SmsNumberId)
+
+@Html.ValidationMessageFor(x => x.Number)
+@Html.ValidationMessageFor(x => x.Password)
+@Html.ValidationMessageFor(x => x.SmppPort)
+@Html.ValidationMessageFor(x => x.SmppServer)
+@Html.ValidationMessageFor(x => x.Username)

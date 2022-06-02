@@ -1,0 +1,130 @@
+﻿@{
+    ViewBag.Title = Html.Resource("Title");
+}
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Shared.Web.Models.PaginatedView<Cyara.Shared.Web.Models.UserViewData>
+
+@section PageHead
+{
+@Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+    @Html.ActionLinkIfPermitted(Html.Resource("CreateUser"), "create", "SuperUser", null, new { @class = "btn "}, showTextIfNotPermitted: false)
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <table id="superusersgrid" class="table truncated table-striped table-hover finger">
+            <colgroup>
+                <col style="width: 80px"/>
+                <col style="width: 20px"/>
+                <col/>
+                <col style="width: 20%"/>
+                <col style="width: 20%"/>
+                <col style="width: 20%"/>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th>@Html.GlobalResource("TableHeading_Username")</th>
+                    <th>@Html.GlobalResource("TableHeading_Surname")</th>    
+                    <th>@Html.GlobalResource("TableHeading_Firstname")</th>
+                    <th>@Html.GlobalResource("TableHeading_Phone")</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Collection)
+                {
+                    <tr data-userid="@user.UserId">
+                        <td>@Html.RenderConditional(user.Active, null, new HtmlString("<span class=\"label label-important\">{0}</span>".FormatWith(Html.GlobalResource("Inactive"))))</td>
+                        <td>@Html.RenderConditional(
+                            user.IsLockedOut, 
+                            new HtmlString("<i class=\"icon-lock\"></i>"), 
+                            null)</td>
+                        <td class="delete-label truncate">@Html.ActionLinkIfPermitted(user.Username, "edit", "SuperUser", new { id = user.UserId }, null)</td>
+                        <td class="truncate">@user.Lastname</td>
+                        <td class="truncate">@user.Firstname</td>
+                        <td class="truncate">@user.Telephone</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    <script id="template-row" type="text/x-tmpl">
+    <tr data-userid="{%=o.userId %}">
+        <td>{% if (o.active === false) { %}<span class="label label-important">@Html.GlobalResource("Inactive")</span>{% } %} </td>
+        <td>{% if (o.isLockedOut === true) { %}<i class="icon-lock"></i>{% } %} </td>
+        <td class="delete-label truncate">@Html.ContentBlockIfPermitted(new HtmlString("<a href=\"" + Url.Action("edit", "SuperUser") + "/{%=o.userId %}\">{%=o.username %}</a>"), new HtmlString("{%=o.username %}"), "edit", "SuperUser")</td>
+        <td class="truncate">{%=o.lastname %}</td>
+        <td class="truncate">{%=o.firstname %}</td>
+        <td class="truncate">{%=o.telephone %}</td>
+    </tr>
+    </script>
+    
+    <script type="text/javascript">
+
+        $(function() {
+            var superGrid = new AjaxGrid({
+                dataSourceUrl: '@Url.Action("list", "SuperUser", new { area = "admin" })',
+                table: '#superusersgrid',
+                totalPages: @Model.TotalPages,
+                collectionSize: @Model.CollectionSize,
+                pageSize: @Model.PageSize,
+                pageNumber: @Model.PageNumber,
+                sortColumn: '@Model.SortColumn.ToJavascriptSafeString()',
+                sortAscending: @Model.SortAscending.ToString().ToLower(),
+                rowTemplate: 'template-row',
+                recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()',
+                autoClickLink: false
+            });
+
+            @if (Html.HasActionPermission("delete", "superuser")) {
+            <text>
+            var trash = new GridRowTrash({
+                table: '#superusersgrid',
+                deleteToolTip: '@Html.Resource("DeleteTooltip").ToJavascriptSafeString()',
+                constructEntity: function(row, grid) {
+                    var cell = row.find('td.delete-label');
+                    var user = $.trim(cell.text());
+                    return { name: user, key: user };
+                },
+                exclude: function(row) {
+                    var userId = row.attr('data-userid');
+
+                    var cell = $('td.delete-label', row);
+                    var user = $.trim(cell.text());
+
+                    return userId == '@Model.User.UserId';
+                },
+                modalHeader: '@Html.Resource("DeleteModalHeader").ToJavascriptSafeString()',
+                clickHandler: function(key, row, grid) {
+                    superGrid.showSpinner();
+                    var userId = row.attr('data-userid');
+                    $.post('@Url.Action("delete", "superuser")/{0}'.format(userId),
+                        function(data) {
+                            if (typeof data != 'undefined' && typeof data.isSuccess != 'undefined') {
+                                if (data.isSuccess) {
+                                    window.location
+                                        .href =
+                                        '@Url.Action("index", "SuperUser", new { messageId = "User_Delete" })';
+                                } else {
+                                    superGrid.hideSpinner();
+                                    alert(data.errorMessage);
+                                }
+                            }
+                        });
+                }
+            });
+            </text>
+            }
+        });
+
+    </script>
+}

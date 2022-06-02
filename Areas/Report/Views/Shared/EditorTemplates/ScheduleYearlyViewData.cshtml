@@ -1,0 +1,138 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Shared.Types.ReportSchedule
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@model Cyara.Web.Portal.Areas.Report.Models.ScheduleYearlyViewData
+
+
+<div class="control-group">
+    @Html.LabelFor(m => m.EveryYear, new {@class = "control-label"})
+    <div class="controls">
+        @Html.TextBoxFor(m => m.EveryYear, new {@class = "input-mini inline"})
+        @Html.Resource("YearsIn")
+        @Html.ValidationMessageFor(m => m.EveryYear)
+    </div>
+</div>
+
+<div class="control-group">
+    <div class="controls">
+        @Html.HiddenFor(m => m.ScheduleUnavailable)
+        @Html.HiddenFor(m => m.EachParticularMonth)
+        <div class="calendar-table">
+            <table>
+                @{
+                    int month = 1;
+                    for (int row = 0; row < 5; row++)
+                    {
+                        <tr>
+                            @for (int col = 0; col < 5; col++)
+                            {
+                                <td
+                                    @Html.IsKeyInCommaDelimitedSequence(Model.EachParticularMonth, month.ToString(), new HtmlString("class=selected-td"), null) 
+                                    data-value="@(month)">
+                                    @(Cyara.Web.Resources.Common.ResourceManager.GetString("MonthAbbrev_{0}".FormatWith(month++)))
+                                </td>
+                                if (month > 12)
+                                {
+                                    break;
+                                }
+                            }
+                        </tr>
+                        if (month > 12)
+                        {
+                            break;
+                        }
+                    }
+                }
+            </table>
+        </div>
+        @Html.ValidationMessageFor(m => m.EachParticularMonth)
+    </div>
+</div>
+
+<div class="control-group">
+    <div class="controls">
+        <label class="checkbox">
+            @Html.CheckBoxFor(m => m.SpecialDayWithinSpecifiedMonth)
+            @Html.LabelFor(m => m.SpecialDayWithinSpecifiedMonth)
+        </label>
+        @Html.DropDownListFor(m => m.DayPosition, Model.DayPositionOptions, new { @class="inline input-small" })
+        @Html.DropDownListWithSeparatorFor(m => m.DaySelection, Model.DaySelectionOptions, new { @class = "inline input-medium" })
+        @Html.ValidationMessageFor(m => m.DayPosition) 
+        @Html.ValidationMessageFor(m => m.DaySelection)
+    </div>
+</div>
+
+@{Html.RenderPartial("ScheduleDetailWithEndRepeatViewData", Model); }
+
+<script type="text/javascript">
+    (function () {
+
+        function enableDisable() {
+            if ($("#@Html.IdFor(m => m.SpecialDayWithinSpecifiedMonth)").is(":checked")) {
+                $("#@Html.IdFor(m => m.DayPosition),#@Html.IdFor(m => m.DaySelection)").prop("disabled", null);
+            }
+            else {
+                $("#@Html.IdFor(m => m.DayPosition),#@Html.IdFor(m => m.DaySelection)").prop("disabled", true);
+                $("#@Html.IdFor(m => m.DayPosition)").val("@PeriodPositionWithinParentPeriodEnum.First.ToString()");
+                $("#@Html.IdFor(m => m.DaySelection)").val("@DaySelectionEnum.Day.ToString()");
+            }
+        }
+        
+        ScheduleReport.getInstance(".js-schedule-pop").registerUnavailableWriteHandler(function (value) {
+            $("#@Html.IdFor(m => m.ScheduleUnavailable)").val(value);
+        });
+
+        ScheduleReport.getInstance(".js-schedule-pop").registerUnavailableReadHandler(function () {
+            return $("#@Html.IdFor(m => m.ScheduleUnavailable)").val();
+        });
+
+        ScheduleReport.getInstance(".js-schedule-pop").addLoadHandler("ScheduleYearlyViewData", function () {
+
+            $("#@Html.IdFor(m => m.DaySelection),#@Html.IdFor(m => m.DayPosition)")
+                .change(function() {
+                    $("#@Html.IdFor(m => m.SpecialDayWithinSpecifiedMonth)").prop("checked", true);
+                    ScheduleReport.getInstance(".js-schedule-pop").post();
+                });
+
+            $("#@Html.IdFor(m => m.EveryYear)")
+                .change(function() {
+                    if (/^[0-9]+$/.test($(this).val())) {
+                        ScheduleReport.getInstance(".js-schedule-pop").post();
+                    }
+                });
+
+            $("#@Html.IdFor(m => m.SpecialDayWithinSpecifiedMonth)")
+                .change(function () {
+                    enableDisable();
+                    ScheduleReport.getInstance(".js-schedule-pop").post();
+                });
+
+            $(".calendar-table td")
+                .click(function (event) {
+                    $(this).toggleClass("selected-td");
+                    $("#@Html.IdFor(m => m.EachParticularMonth)").val(null);
+                    var selected = '';
+                    $(".calendar-table td.selected-td").each(function(i, e) {
+                        selected += $(e).attr('data-value') + ',';
+                    });
+                    $("#@Html.IdFor(m => m.EachParticularMonth)").val(selected);
+                    $("#optionDayWithinSpecifiedMonth").prop("checked", true);
+                    $("#@Html.IdFor(m => m.EachParticularMonth)").clearValidation();
+                    ScheduleReport.getInstance(".js-schedule-pop").post();
+                    event.preventDefault();
+                })
+                .mouseover(function() {
+                    $(this).toggleClass("highlighted-td");
+                })
+                .mouseleave(function() {
+                    $(this).toggleClass("highlighted-td");
+                })
+                .bind("selectstart", function() {
+                    return false;
+                });
+
+            enableDisable();
+        });
+    })();
+</script>

@@ -1,0 +1,183 @@
+﻿@{
+    ViewBag.Title = Html.Resource("Title");
+}
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal
+@model Cyara.Web.Portal.Areas.Admin.Models.IdentityProvider.IdentityProviderListViewModel
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+    @Html.ActionLink(Html.Resource("Create"), "Create", "IdentityProvider", null, new { @class = "btn" })
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <div class="boxed-grid">
+            <h2>@Html.Resource("SectionTitle")</h2>
+            <table id="providersgrid" class="table truncated table-striped table-hover">
+                <colgroup>
+                    <col style="width: 80px"/>
+                    <col/>
+                    <col style="width: 15%"/>
+                    <col style="width: 15%"/>
+                    <col style="width: 15%"/>
+                </colgroup>
+                <thead>
+                <tr>
+                    <th></th>
+                    <th data-sort="Name"><a href="#">@Html.GlobalResource("TableHeading_Name")</a></th>
+                    <th data-sort="ProviderId"><a href="#">@Html.GlobalResource("TableHeading_Provider")</a></th>
+                    <th>@Html.GlobalResource("TableHeading_Type")</th>
+                    <th>@Html.GlobalResource("TableHeading_UsedBy")</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.Collection)
+                {
+                    <tr data-entityid="@item.IdentityProviderId">
+                        <td><span class="label @item.StatusClass">@item.StatusLabel</span></td>
+                        <td class="truncate js-name">@Html.ActionLink(item.Name, "Edit", "IdentityProvider", new { id = item.IdentityProviderId }, null)</td>
+                        <td class="truncate">@item.ProviderId</td>
+                        <td class="truncate">@item.Type</td>
+                        <td class="truncate js-usedin">@Html.RenderConditional(item.UsedIn > 0, new HtmlString("<a href=\"#\">" + item.UsedIn + "</a>"), new HtmlString("0"))</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script id="template-row" type="text/x-tmpl">
+        <tr data-entityid="{%=o.identityProviderId %}">
+            <td><span class="label {%=o.statusClass %}">{%=o.statusLabel %}</span></td>
+            <td class="truncate js-name"><a href="@Url.Action("Edit", "IdentityProvider")/{%=o.identityProviderId %}">{%=o.name %}</a></td>
+            <td class="truncate">{%=o.providerId %}</td>
+            <td class="truncate">{%=o.type %}</td>
+            <td class="truncate js-usedin">{% if (o.usedIn > 0) { %}<a href="#">{%=o.usedIn %}</a>{% } else { %}0{% } %}</td>
+        </tr>
+    </script>
+
+    <script id="template-usedin" type="text/x-tmpl">
+        <table id="provider-usedin" class="table truncated table-striped table-hover finger">
+            <thead>
+                <tr>
+                    <th>@Html.GlobalResource("TableHeading_AccountName")</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </script>
+    
+<script id="template-usedin-row" type="text/x-tmpl">
+    <tr>
+        <td><a href="{%=replace('@Url.Action("Edit", "Account", new { RouteAccountId = -1 })', '-1', o.accountId)%}">{%=o.name %}</a></td>
+    </tr>
+</script>
+
+    <script type="text/javascript">
+
+        $(function() {
+
+            var providersGrid = new AjaxGrid({
+                dataSourceUrl: '@Url.Action("List", "IdentityProvider", new { area = "admin" })',
+                table: '#providersgrid',
+                totalPages: @Model.TotalPages,
+                collectionSize: @Model.CollectionSize,
+                pageSize: @Model.PageSize,
+                pageNumber: @Model.PageNumber,
+                sortColumn: '@Model.SortColumn.ToJavascriptSafeString()',
+                sortAscending: @Model.SortAscending.ToString().ToLower(),
+                rowTemplate: 'template-row',
+                recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()',
+                ignoreActiveClick: true
+            });
+
+            $(document).on('click',
+                'td.js-usedin a',
+                function(e) {
+                    e.preventDefault();
+                    PageSpinner.show();
+                    $.ajax({
+                        url: '@Url.Action("Used", "IdentityProvider", new { area = "admin" })',
+                        data: JSON.stringify({ id: $(e.target).closest('tr').attr('data-entityid'), selectedAccountId: $("#SelectedAccountId").val() }),
+                        contentType: "application/json;charset=utf-8",
+                        type: "POST",
+                        success: function(data) {
+                                if (data && $.isArray(data.list)) {
+
+                                    var modal = new ModalPopup(
+                                        {
+                                            keyboard: false,
+                                            header: '@Html.Resource("UsedInHeader").ToJavascriptSafeString()',
+                                            bodyMarkup: tmpl('template-usedin', {}),
+                                            showPrimary: false,
+                                            showCancel: true,
+                                            messageHtml: "",
+
+                                            beforeShow: $.proxy(function() {
+
+                                                    var grid = new AjaxGrid({
+                                                        dataSource: data.list,
+                                                        table: '#provider-usedin',
+                                                        totalPages: 0,
+                                                        collectionSize: 0,
+                                                        pageSize: @MvcApplication.Settings.DefaultPageSize,
+                                                        pageNumber: 1,
+                                                        rowTemplate: 'template-usedin-row',
+                                                        recordLabel: '@Html.Resource("Accounts").ToJavascriptSafeString()',
+                                                        autoClickLink: false,
+                                                        showRecordPageLinks: false,
+                                                        noStateInStorage: true
+                                                    });
+                                                },
+                                                this)
+
+                                        });
+
+                                } else if (data && data.error) {
+                                    alert(data.error);
+                                }
+                            },
+                        complete: $.proxy(function(data) {
+                                PageSpinner.hide();
+                            },
+                            this)
+                    });
+                });
+
+            var trash = new GridRowTrash({
+                table: '#providersgrid',
+                deleteToolTip: '@Html.Resource("DeleteTooltip").ToJavascriptSafeString()',
+                modalHeader: '@Html.Resource("DeleteHeader").ToJavascriptSafeString()',
+                constructEntity: function(row, grid) {
+                    return { name: $('td.js-name', row).text(), key: $(row).attr('data-entityid') };
+                },
+                exclude: function(row) {
+                    return parseInt($('td.js-usedin', row).text()) > 0;
+                },
+                clickHandler: function(key, row, grid) {
+                    providersGrid.showSpinner();
+                    var entityid = row.attr('data-entityid');
+                    $.post('@Url.Action("Delete", "IdentityProvider")/{0}'.format(entityid),
+                        function(data) {
+                            providersGrid.refresh();
+                            ShowMessage.Success('@Html.Resource("IdentityProvider_Deleted").ToJavascriptSafeString()');
+                        });
+                    providersGrid.hideSpinner();
+                }
+            });
+
+        });
+
+    </script>
+}
+

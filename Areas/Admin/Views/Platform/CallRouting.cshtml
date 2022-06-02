@@ -1,0 +1,166 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model  Cyara.Web.Portal.Areas.Admin.Models.CallRouting.CallRoutingViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+}
+
+@section Head
+{
+    @Scripts.Render("~/bundles/scripts/ace")
+}
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+    <div class="textright">&nbsp;</div>
+    @{
+        Html.RenderPartial("ServerTimeUtc");
+    }
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <div class="form">
+            <form id="callRoutingRulesetForm" class="no-gap" method="POST" autocomplete="off">
+                @Html.AntiForgeryToken()
+                @Html.EditorForModel()
+                @Html.HiddenFor(m => m.Hash)
+                @Html.HiddenFor(m => m.LastValid)
+
+                <div class="form-actions no-bottom-margin">
+                    @Html.ErrorPanel(Model.Message)
+
+                    <button type="submit" id="saveButton" class="btn btn-primary btn-submit">@Html.GlobalResource("SaveDetails")</button>
+                    @Html.ActionLink(this.Html.GlobalResource("Cancel"), "index", "Platform", null, new { @class = "btn btn-cancel" }) <br /><br />
+
+                </div>
+
+                <div class="form-body">
+                    @if (Model.LastValidStatus != null)
+                    {
+                        Html.RenderPartial("CallRoutingStatusPartial", Model.LastValidStatus);
+                    }
+
+                    <div class="control-group">
+                        @Html.LabelFor(m => m.LastValidCallRoutingRuleset)
+                        <div class="controls">
+                            <div id="@Html.IdFor(m => m.LastValidCallRoutingRuleset)" class="fixed-textarea" style="border: 1px solid #ccc; border-radius: 4px; margin-top: 10px;">@Model.LastValidCallRoutingRuleset</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="controls">
+                            <button type="button" id="copyButton" class="btn">@Html.Resource("CopyToEditor")</button>
+                        </div>
+                    </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="text/x-tmpl" id="popupContent">
+        <p>@Html.Resource("SubmitPopupText").ToJavascriptSafeString()</p>
+        {%if (o) { %}
+        <p class="alert alert-critical">
+            @Html.Resource("SubmitPopupTextOffline").ToJavascriptSafeString()
+        </p>
+        {% } %}
+    </script>
+
+    <script type="text/javascript">
+        $(function() {
+            var dirtyHandler = new DirtyPageHandler({ form: '#editform' });
+            if ($("#page-error").is(":visible")) {
+                dirtyHandler.set_isDirty();
+            }
+
+            @* make sure compressed-minified stuff works fine *@
+            ace.config.set("workerPath", __cyara.settings.appRootNoAccount + "Scripts/ace");
+
+            var readOnlyEdit = ace.edit('@Html.IdFor(m => m.LastValidCallRoutingRuleset)');
+            readOnlyEdit.setTheme("ace/theme/chrome");
+            readOnlyEdit.getSession().setMode("ace/mode/xml");
+            readOnlyEdit.setOption("maxLines", Infinity);
+            readOnlyEdit.setOption("minLines", 15);
+            readOnlyEdit.setShowPrintMargin(false);
+            readOnlyEdit.setReadOnly(true);
+
+            var edit = ace.edit('@Html.IdFor(m => m.RoutingRuleset)');
+            edit.setTheme("ace/theme/chrome");
+            edit.getSession().setMode("ace/mode/xml");
+            edit.setOption("maxLines", Infinity);
+            edit.setOption("minLines", 15);
+            edit.setShowPrintMargin(false);
+            edit.getSession().on('change', function (e) {
+                dirtyHandler.set_isDirty();
+            });
+
+            function returnScript() {
+                return $("<input />")
+                    .attr("type", "hidden")
+                    .attr("name", '@Html.NameFor(m => m.RoutingRuleset)').val(edit.getValue());
+            }
+
+            var form = $('#callRoutingRulesetForm');
+
+            $("#saveButton").on("click",
+                function(evt) {
+                    evt.preventDefault();
+
+                    var modal = new ModalPopup({
+                        header: '@Html.Resource("SubmitCallRoutingPopupTitle")',
+                        cancelButton: '@Html.GlobalResource("Cancel") ',
+                        actionButton: '@Html.Resource("SubmitPopupButton")',
+                        showPrimary: true,
+                        bodyMarkup: tmpl("popupContent", $("#@Html.IdFor(m => m.SystemApproved)").is(":checked")),
+                        clickHandler: $.proxy(function(modalRoot) {
+                                $("button", modalRoot).prop('disabled', true);
+                                $('form').append(returnScript());
+                                PageSpinner.show();
+                                form.submit();
+                        }, this)
+                    });
+                });
+
+            $("#copyButton").on("click",
+                function(evt) {
+                    evt.preventDefault();
+
+                    var modal = new ModalPopup({
+                        header: '@Html.Resource("CopyToEditorPopupTitle")',
+                        cancelButton: '@Html.GlobalResource("Cancel") ',
+                        actionButton: '@Html.Resource("CopyToEditor")',
+                        showPrimary: true,
+                        bodyMarkup: '@Html.Resource("CopyConfirmation").ToJavascriptSafeString()',
+                        clickHandler: $.proxy(function() {
+                            modal.close();
+
+                            // copy
+                            edit.setValue(readOnlyEdit.getValue(), 1);
+                            dirtyHandler.set_isDirty();
+
+                            // scroll us to the top
+                            setTimeout(function() {
+                                    $('html, body').animate({
+                                            scrollTop: 0
+                                        },
+                                        1000,
+                                        function() {
+                                            ShowMessage.Success(
+                                                '@Html.Resource("Copied").ToJavascriptSafeString()');
+                                        });
+                                },
+                                100);
+                        }, this)
+                    });
+                });
+        });
+    </script>
+}

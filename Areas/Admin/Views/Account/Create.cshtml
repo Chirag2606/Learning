@@ -1,0 +1,51 @@
+﻿@{
+    ViewBag.Title = Html.Resource("Title");
+}
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.SiteMap
+@using MvcSiteMapProvider.Web.Html
+@model Cyara.Web.Portal.Areas.Admin.Models.AccountEditViewModel
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+}
+
+@section Breadcrumbs
+{
+    @Html.MvcSiteMap().GenerateBreadcrumbs(new [] { Url.Action("Index"), Url.Action("Create") })
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <div class="form">
+            @using (Html.BeginForm("create", "account", null, FormMethod.Post, new { id = "createaccount" }))
+            {
+                @Html.AntiForgeryToken()
+
+                @Html.EditorForModel()
+
+                @Html.EditorFor(m => m, "AccountTestConfiguration", new { FormSelector = "#createaccount" })
+                
+                @Html.EditorFor(m => m, "AccountIdentityProvider")
+                
+                <div class="form-actions">
+                    @Html.ErrorPanel(Model.Message)
+                    <button type="submit" class="btn btn-primary btn-submit">@Html.GlobalResource("SaveDetails")</button>
+                    @Html.ActionLink(Html.GlobalResource("Cancel"), "index", "account", new { @class = "btn btn-cancel" } )
+                </div>
+            }
+        </div>
+    </div>
+    <script type="text/javascript">
+        $(function() {
+            var dirtyHandler = new DirtyPageHandler({ form: '#createaccount' });
+        });
+    </script>
+}

@@ -1,0 +1,207 @@
+﻿@using Cyara.Domain.Types.Common
+@using Cyara.Domain.Types.Plan
+@using Cyara.Domain.Types.Shared
+@using Cyara.Domain.Types.TestCase
+@using Cyara.Shared.Types.Storage
+@using Cyara.Shared.Types.TestCase
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Core.Extensions
+@using Cyara.Web.Portal.Core.Script
+@model Cyara.Web.Portal.Areas.Report.Models.CustomReportSummaryDetailsViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+    Layout = "~/Views/Shared/_BaseLayout.cshtml";
+}
+
+@section Head
+{
+    <script type="text/javascript">
+        __cyara.resources = new Resources();
+        __cyara.types = {};
+        __cyara.types.@Html.Raw(Export.Enum<FolderType>());
+        __cyara.types.@Html.Raw(Export.Enum<EntityType>());
+        __cyara.types.@Html.Raw(Export.Enum<ExchangeType>());
+        __cyara.types.@Html.Raw(Export.Enum<MeanOpinionScore>());
+        __cyara.types.@Html.Raw(Export.Enum<CallFlow>());
+        __cyara.types.@Html.Raw(Export.Enum<PlanType>());
+        __cyara.types.@Html.Raw(Export.Enum<MediaType>());
+        __cyara.instances = {};
+    </script>
+}
+
+<div id="page-body" class="container">
+    <h1>@Model.ReportName</h1>
+    <br />
+
+    <div class="overlap">
+        @Html.Partial("~/Areas/Report/Views/Shared/Filters.cshtml", Model.Filter)
+
+        <div class="boxed-divider"></div>
+
+        <div class="boxed top-gap-small pageblock">
+            <h4>@Html.Resource("Header_" + Model.ResultType)</h4>
+
+            <div class="row-fluid">
+                @if (Model != null && Model.TestResultSummaries != null)
+                {
+                    <div class="pull-left">
+                        <div id="ReportSummaryDataArea"></div>
+                    </div>
+                    <div class="pull-left">
+                        <table id="ReportSummaryData" data-calls-label="@Html.ReportingGlobalResource("TotalCalls", "TotalSessions")">
+                            @foreach (var testResultSummary in Model.TestResultSummaries)
+                            {
+                                <tr>
+                                    <td title="@testResultSummary.Percent%"><span data-type="colour" class="legend legend-colour">&nbsp;</span></td>
+                                    <td data-type="label" title="@testResultSummary.Percent%">@testResultSummary.DetailedResult</td>
+                                    <td data-type="data" style="display: none">@testResultSummary.Number</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        <div class="boxed-divider"></div>
+
+        <div class="boxed">
+            <h2 aria-label="@Html.GlobalResource("Details")"></h2>
+
+            @using (Html.BeginFormForEnumerable("ResultsSummaryDetails", "report", new { resultTypeId = (int)Model.ResultType }, FormMethod.Post, new { id = "resultssummarydetails" }))
+            {
+                <div>
+                    @if (Model.CampaignRunTestResultDetails != null)
+                    {
+                        <table id="campaignRunTestResultDetailsGrid" class="table truncated table-striped">
+                            <colgroup>
+                                <col style="width: 20%" />
+                                <col style="width: 13%" />
+                                <col style="width: 7%" />
+                                <col style="width: 60%" />
+                            </colgroup>
+                            <thead>
+                            <tr>
+                                <th data-sort="@Columns.TestCase"><a href="#">@Html.GlobalResource("TableHeading_TestCase")</a></th>
+                                <th data-sort="@Columns.Folder"><a href="#">@Html.GlobalResource("TableHeading_Folder")</a></th>
+                                <th data-sort="@Columns.Calls"><a href="#">@Html.ReportingGlobalResource("TableHeading_Calls", "TableHeading_Sessions")</a></th>
+                                <th>@Html.GlobalResource("TableHeading_ErrorBreakDownByTestCase")</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var campaignRunTestResultDetails in Model.CampaignRunTestResultDetails.Collection)
+                            {
+                                <tr>
+                                    <td class="wrap">@campaignRunTestResultDetails.TestCase</td>
+                                    <td class="wrap">@campaignRunTestResultDetails.Folder</td>
+                                    <td>@campaignRunTestResultDetails.Calls</td>
+                                    <td>
+                                        @if (campaignRunTestResultDetails.DetailedResult != null)
+                                        {
+                                            <table class="table table-striped">
+                                                <colgroup>
+                                                    <col style="width: 7%" />
+                                                    <col style="width: 63%" />
+                                                </colgroup>
+                                                <thead>
+                                                <tr>
+                                                    <th>@Html.ReportingGlobalResource("TableHeading_Calls", "TableHeading_Sessions")</th>
+                                                    <th>@Html.GlobalResource("TableHeading_DetailedResult")</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                @foreach (var detail in campaignRunTestResultDetails.DetailedResult)
+                                                {
+                                                    <tr>
+                                                        <td>@detail.Number</td>
+                                                        <td>
+                                                            <a data-detailedresult="@detail.DetailedResultParameter" data-testcasename="@detail.TestCaseName" data-folderpath="@campaignRunTestResultDetails.Folder">
+                                                                @detail.DetailedResult
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                                </tbody>
+                                            </table>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+                <div>
+                    @if (Model.CampaignRunTestResults != null && Model.CampaignRunTestResults.Collection != null)
+                    {
+                        <table id="campaignRunTestResultsGrid" class="table truncated table-striped table-hover finger">
+                            <colgroup>
+                                <col class="result-cell" />
+                                <col style="width: 15%" />
+                                <col style="width: 15%" />
+                                @if (Model.MediaType == MediaType.AgentVoice || Model.MediaType == MediaType.Voice)
+                                {
+                                    <col style="width: 15%" />
+                                }
+                                <col style="width: 10%" />
+                                <col style="width: 10%" />
+                                <col />
+                            </colgroup>
+                            <thead>
+                            <tr>
+                                <th class="result-cell"></th>
+                                <th data-sort="@Columns.TestCase"><a href="#">@Html.GlobalResource("TableHeading_TestCase")</a></th>
+                                <th data-sort="@Columns.Folder"><a href="#">@Html.GlobalResource("TableHeading_Folder")</a></th>
+                                @if (Model.MediaType == MediaType.AgentVoice || Model.MediaType == MediaType.Voice)
+                                {
+                                    <th data-sort="@Columns.PhoneNo"><a href="#">@Html.GlobalResource("TableHeading_CalledNumber")</a></th>
+                                }
+                                <th data-sort="@Columns.TimeCallPlaced"><a href="#">@Html.GlobalResource("TableHeading_TimeCallPlaced")</a></th>
+                                <th data-sort="@Columns.Duration"><a href="#">@Html.GlobalResource("TableHeading_Duration")</a></th>
+                                <th data-sort="@Columns.DetailedResult"><a href="#">@Html.GlobalResource("TableHeading_DetailedResult")</a></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var campaignRunTestResult in Model.CampaignRunTestResults.Collection)
+                            {
+                                <tr>
+                                    <td class="result-cell @campaignRunTestResult.ResultType.ToLower()"></td>
+                                    <td class="wrap">@campaignRunTestResult.TestCase</td>
+                                    <td class="wrap">@(string.IsNullOrEmpty(campaignRunTestResult.Folder) ? "\\" : campaignRunTestResult.Folder)</td>
+                                    @if (Model.MediaType == MediaType.AgentVoice || Model.MediaType == MediaType.Voice)
+                                    {
+                                        <td class="wrap">@(string.IsNullOrEmpty(campaignRunTestResult.PhoneNo) ? "" : campaignRunTestResult.PhoneNo)</td>
+                                    }
+                                    <td>@campaignRunTestResult.TimeCallPlaced</td>
+                                    <td>@campaignRunTestResult.Duration</td>
+                                    <td class="wrap">@campaignRunTestResult.DetailedResult</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+
+                        if (!string.IsNullOrEmpty(Model.TruncationWarning))
+                        {
+                            <div class="alert alert-warning">@Model.TruncationWarning</div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(function() {
+
+            var chart = new ReportChart({
+                dataTableName: 'ReportSummaryData',
+                chartTableName: 'ReportSummaryDataArea',
+                generateColours: true
+            });
+        });
+    </script>
+</div>

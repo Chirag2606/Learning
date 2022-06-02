@@ -1,0 +1,36 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.Notification.NotificationViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+}
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageContent
+{
+    <div class="overlap-tabs form-nogap">
+        <ul class="page-tabs">
+            <li><a href="#" data-target="new-message">@Html.Resource("NewEmail")</a></li>
+            <li><a href="#" data-target="email-logs">@Html.Resource("EmailLogs")</a></li>
+            <li><a href="#" data-target="templates">@Html.Resource("Templates")</a></li>
+        </ul>
+        <div class="clearfix"></div>
+
+        <div class="form" id="new-message" style="display: none">
+            @{ Html.RenderPartial("NewMessage"); }
+        </div>
+
+        <div class="form" id="email-logs" style="display: none">
+            @{ Html.RenderPartial("EmailLogs", Model.EmailLogs); }
+        </div>
+
+        <div class="form" id="templates" style="display: none">
+            @{ Html.RenderPartial("Templates", Model.Templates); }
+        </div>
+    </div>    
+}

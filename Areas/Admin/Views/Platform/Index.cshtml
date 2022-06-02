@@ -1,0 +1,249 @@
+﻿@using Cyara.Foundation.Core.Extensions
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model  Cyara.Web.Portal.Areas.Admin.Models.ConfigurationViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+}
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+    <div class="textright">&nbsp;</div>
+    @{
+        Html.RenderPartial("ServerTime");
+    }
+}
+
+@section PageContent
+{
+    <div class="overlap-tabs">
+        <ul class="page-tabs">
+            <li class="active"><a href="#" data-target="platform-wide">@Html.Resource("PlatformWide")</a></li>
+            <li><a href="#" data-target="dashboard">@Html.Resource("Dashboard")</a></li>
+            <li><a href="#" data-target="inthub">@Html.Resource("IntegrationHub")</a></li>
+            <li><a href="#" data-target="schedulers">@Html.Resource("Schedulers")</a></li>
+        </ul>
+        <div class="clearfix"></div>
+        <div class="form" id="platform-wide">
+            <form id="editform" class="no-gap" method="POST" autocomplete="off">
+                @Html.AntiForgeryToken()
+                @Html.EditorForModel()
+                <div class="form-actions">
+                    @Html.ErrorPanel(Model.Message)
+
+                    <button type="submit" id="saveButton" class="btn btn-primary btn-submit">@Html.GlobalResource("SaveDetails")</button>
+                    @Html.ActionLink(this.Html.GlobalResource("Cancel"), "index", "Platform", null, new { @class = "btn btn-cancel" }) <br/><br/>
+
+                </div>
+            </form>
+        </div>
+        <div class="form" id="dashboard" style="display: none">
+            @using (Html.BeginForm("Reload", "Platform"))
+            {
+                @Html.AntiForgeryToken()
+                <div class="form-head">
+                    <h2>@Html.Resource("ExecutiveDashboard")</h2>
+                </div>
+                <div class="boxed-grid boxed no-top boxed-grid-inner">
+                    <h5>@Html.Resource("ReloadDashboards")</h5>
+                    <div class="control-group">
+                        @Html.RenderConditional(Model.DashboardEnabled, new HtmlString("<button type=\"submit\" class=\"btn\">" + Html.Resource("Reload") + "</button>"), null)
+                    </div>
+                    <p>@Html.RenderConditional(Model.DashboardEnabled, Html.Resource("ReloadIntro"), Html.Resource("DashboardNotEnabled"))</p>
+                </div>
+            }
+        </div>
+        <div class="form" id="inthub" style="display: none">
+            @using (Html.BeginForm("IntHub", "Platform"))
+            {
+                @Html.AntiForgeryToken()
+                <div class="form-head">
+                    <h2>@Html.Resource("IntegrationHubHeader")</h2>
+                </div>
+                <div class="form-body">
+                    <div class="control-group">
+                        @Html.LabelFor(m => m.IntHubConfiguration.IntegrationHubUrl)
+                        <div class="controls">
+                            @Html.TextBox("IntegrationHubUrl", Model.IntHubConfiguration.IntegrationHubUrl, new { @class = "input-xxlarge" })
+                            @Html.ValidationMessageFor(m => m.IntHubConfiguration.IntegrationHubUrl)
+                        </div>
+                    </div>
+                    @{ var index = 0; }
+                    @foreach (var batch in Model.IntHubConfiguration.ScopeSecret.Split(2).ToArray())
+                    {
+                        <div class="row-fluid">
+                            @{ string name = ""; }
+                            @foreach (var secret in batch)
+                            {
+                                {
+                                    name = "ScopeSecret[" + (index++) + "]";
+                                }
+                                <div class="control-group span6">
+                                    <label class="control-label">@Html.DisplayNameFor(m => m.IntHubConfiguration.ScopeSecret) <span title="@Html.Resource("CopyThisValue")" data-copytarget="@name"><i class="icon-share"></i></span></label>
+                                    <div class="controls">
+                                        <div class="input-append">
+                                            <input type="hidden" name="@name" value="@secret"/>
+                                            <input type="text" id="@name" disabled="disabled" class="input-xlarge" value="@secret"/>
+                                            <button class="btn" type="button" data-action="clear">@Html.Resource("Clear")</button>
+                                            <button class="btn" type="button" data-action="generate">@Html.Resource("Generate")</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="row-fluid">
+                        <div class="alert alert-warning span6">
+                            <p>These Scope Secrets are part of the mechanism that Integration Hub uses to authenticate back to the Cyara Platform. Generally, only one Scope Secret should be set at a time, but the Cyara Platform supports having two set at once to facilitate key cycling.</p>
+                            <p>All Integration Hub installs must have the Environment Variable "OAUTH_SECRET" set with a value that matches one of these Scope Secrets.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    @Html.ErrorPanel(Model.Message)
+
+                    <button type="submit" id="saveButton" class="btn btn-primary btn-submit">@Html.GlobalResource("SaveDetails")</button>
+                    @Html.ActionLink(this.Html.GlobalResource("Cancel"), "index", "Platform", null, new { @class = "btn btn-cancel" }) <br/><br/>
+
+                </div>
+            }
+        </div>
+        <div class="form" id="schedulers" style="display: none">
+            <div class="form-head">
+                <h2>@Html.Resource("Schedulers")</h2>
+            </div>
+            @if (!Model.VoiceSchedulerInMaintenanceMode)
+            {
+                <div id="page-warning" class="alert alert-critical" style="margin-bottom: 0px">
+                    <h3>@Html.Resource("SchedulerNotInMaintenanceModeHead")</h3>
+                    <p>@Html.Resource("SchedulerNotInMaintenanceMode")</p>
+                </div>
+            }
+            <div class="form-body">
+                <!--<div class="boxed-grid boxed no-top boxed-grid-inner">-->
+                <h5>@Html.Resource("AbortAllJobs")</h5>
+                <div class="control-group">
+                    <button type="submit" class="btn" @(Model.VoiceSchedulerInMaintenanceMode ? string.Empty : "disabled")>@Html.Resource("AbortAll")</button>
+                </div>
+                <p>@Html.Resource("AbortAllIntro")</p>
+                <div id="page-error" class="error-panel"></div>
+                <table class="table table-striped" style="display: none">
+                    <thead>
+                        <tr>
+                            <th class="result-cell"></th>
+                            <th>@Html.GlobalResource("TableHeading_Host")</th>
+                            <th>@Html.GlobalResource("TableHeading_SchedulerId")</th>
+                            <th>@Html.GlobalResource("TableHeading_Error")</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <!--</div>-->
+        </div>
+    </div>
+
+    <script id="failed-scheduler-template-row" type="text/x-tmpl">
+        <tr>
+            <td class="result-cell {%if (o.success) { %}success{% } else { %}failed{% } %}"></td>
+            <td>{%=coalesce(o.host,'') %}</td>
+            <td>{%=coalesce(o.id,'') %}</td>
+            <td>{%=coalesce(o.error,'') %}</td>
+        </tr>
+    </script>
+
+    <script type="text/javascript">
+    $(function() {
+        var dirtyHandler = new DirtyPageHandler({ form: '#editform' });
+        if ($("#page-error").is(":visible")) {
+            dirtyHandler.set_isDirty();
+        }
+
+        $('#schedulers button').on('click',
+            function(e) {
+                $(e.target).prop('disabled', true);
+                PageSpinner.show();
+                $('#schedulers .error-panel').text('');
+                var $table = $('#schedulers table');
+                var $body = $table.find('tbody');
+                $body.empty();
+                $table.hide();
+                $.post('@Url.Action("AbortAll")',
+                    function(data) {
+                        PageSpinner.hide();
+                        if (data.results && data.results.length > 0) {
+                            $.each(data.results,
+                                function() {
+                                    $body.append(tmpl('failed-scheduler-template-row', this));
+                                });
+                            $table.show();
+
+                            if (data.success) {
+                                ShowMessage.Success(data.successMessage);
+                            } else {
+                                $('#schedulers .error-panel').text(data.failedMessage);
+                                $(e.target).prop('disabled', false);
+                            }
+                        } else {
+                            $('#schedulers .error-panel').text(data.noResponseMessage);
+                            $(e.target).prop('disabled', false);
+                        }
+                    });
+            });
+
+        $('button[data-action]').on('click',
+            function(e) {
+                e.preventDefault();
+                var $target = $(e.target);
+                var inputs = $target.siblings('input');
+                switch ($target.data('action')) {
+                case 'clear':
+                    $.each(inputs,
+                        function() {
+                            this.value = '';
+                        });
+                    break;
+
+                case 'generate':
+                    $.post('@Url.Action("GenerateSecret")',
+                        function(data) {
+                            $.each(inputs,
+                                function() {
+                                    this.value = data;
+                                });
+                        });
+
+                    break;
+                }
+            });
+
+        $('[data-copytarget]').on('click',
+            function(e) {
+                var target = $(e.target).closest('span').attr('data-copytarget');
+
+                try {
+                    var copyText = document.getElementById(target);
+
+                    copyText.disabled = false;
+                    copyText.focus();
+                    copyText.select();
+
+                    document.execCommand("copy");
+                    copyText.disabled = true;
+
+                    ShowMessage.Success('@Html.Resource("SuccessfullyCopied").ToJavascriptSafeString()');
+
+                } catch (err) {
+
+                }
+            });
+        });
+    </script>
+}

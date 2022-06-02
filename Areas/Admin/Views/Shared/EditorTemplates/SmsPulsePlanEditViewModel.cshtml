@@ -1,0 +1,19 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.SmsPulsePlanEditViewModel
+
+<div class="form-head">
+    <h2>@Html.GlobalResource("PlanDetails")</h2>
+</div>
+<div class="form-body">
+    @Html.Partial("EditorTemplates/PlanEdit")
+    @Html.Partial("EditorTemplates/SmsPlanBase")
+    <div class="control-group">
+        @Html.LabelForWithRequired(m => m.MinFrequency, new { @class = "control-label" })
+        <div class="controls">
+            @Html.DropDownListFor(m => m.MinFrequency, Model.Frequencies, new { @class = "input-mini" })
+            @Html.Tooltip(Html.Resource("MinFrequencyTooltip"), Html.GlobalResource("TipLabel"))
+            @Html.ValidationMessageFor(m => m.MinFrequency)
+        </div>
+    </div>
+</div>

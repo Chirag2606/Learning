@@ -1,0 +1,76 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Report.Models.ScheduleDailyViewData
+
+<div class="control-group">
+    @Html.LabelForWithRequired(m => m.EveryDay, new { @class = "control-label" })
+    <div class="controls">
+        @Html.TextBoxFor(m => m.EveryDay, new { @class="input-mini inline" }) @Html.Resource("Days")
+        @Html.ValidationMessageFor(m => m.EveryDay)
+    </div>
+</div>
+
+<div class="control-group">
+    <div class="controls">
+        <label class="checkbox">
+            @Html.CheckBoxFor(m => m.UseCustomTime)
+            @Html.LabelFor(m => m.UseCustomTime)
+        </label>
+        @Html.TextBoxFor(m => m.CustomTime, new { @class="input-large" })
+        <br/>
+        <span class="label-blurb">@Html.Resource("CustomTime")</span>
+        @Html.ValidationMessageFor(m => m.CustomTime)
+    </div>
+</div>
+
+@{Html.RenderPartial("ScheduleDetailWithEndRepeatViewData", Model); }
+
+<script type="text/javascript">
+    @* scope this inside function to avoid global scope hit *@
+    (function () {
+
+        function updateTimeInCustom(data) {
+            var isDisabled = $("#@Html.IdFor(m => m.CustomTime)").prop("disabled");
+
+            if (isDisabled) {
+                var elements = data.split(/\s+/);
+                if (elements.length > 1) {
+                    $("#@Html.IdFor(m => m.CustomTime)").val(elements[1]);
+                    }
+                }
+        }
+        
+        ScheduleReport.getInstance(".js-schedule-pop").addLoadHandler("ScheduleDailyViewData", function() {
+            
+            function enableDisable() {
+                var val = $("#@Html.IdFor(m => m.UseCustomTime)").is(":checked");
+                if (val) {
+                    $("#@Html.IdFor(m => m.CustomTime)").prop("disabled", null);
+                } else {
+                    $("#@Html.IdFor(m => m.CustomTime)").prop("disabled", true);
+                    $("#@Html.IdFor(m => m.CustomTime)").clearValidation();
+                    updateTimeInCustom(ScheduleReport.getInstance(".js-schedule-pop").getCurrentStart());
+                }
+            }
+
+            enableDisable();
+
+            $("#@Html.IdFor(m => m.UseCustomTime)").on("click", function(e) {
+                enableDisable();
+                ScheduleReport.getInstance(".js-schedule-pop").post();
+            });
+            
+            $("#@Html.IdFor(m => m.CustomTime),#@Html.IdFor(m => m.EveryDay)")
+                .change(function () {
+                    if (/^[0-9aAmMpP,: ]+$/.test($(this).val())) {
+                        ScheduleReport.getInstance(".js-schedule-pop").post();
+                    }
+                });
+        });
+
+        ScheduleReport.getInstance(".js-schedule-pop").addStartChangeHandler("ScheduleDailyViewData", function (data) {
+            updateTimeInCustom(data);
+        });
+
+    })();
+</script>

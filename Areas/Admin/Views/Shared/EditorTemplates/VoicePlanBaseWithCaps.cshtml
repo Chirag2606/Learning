@@ -1,0 +1,13 @@
+﻿@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@model Cyara.Web.Portal.Areas.Admin.Models.VoicePlanBaseWithCaps
+
+@Html.Partial("EditorTemplates/VoicePlanBase")
+<div class="control-group">
+    @Html.LabelForWithRequired(m => m.MaxCaps, new {@class = "control-label"})
+    <div class="controls">
+        @Html.TextBoxFor(m => m.MaxCaps, new { @class = "input-mini" })
+        @Html.Tooltip(Html.Resource("MaxCapsTooltip"), Html.GlobalResource("TipLabel"))
+        @Html.ValidationMessageFor(m => m.MaxCaps)
+    </div>
+</div>

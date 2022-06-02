@@ -1,0 +1,244 @@
+﻿@{
+    ViewBag.Title = Html.Resource("Title");
+}
+@using Cyara.Foundation.Core.Extensions
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Reflection
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Areas.Admin.Models
+@model Cyara.Web.Portal.Areas.Admin.Models.SchedulerStatusViewModel
+
+@section PageHead
+{
+    @Html.PageHeader(Html.Resource("PageHead"))
+}
+
+@section PageHeadRight
+{
+    <div class="textright">
+        @Html.ActionLink(Html.GlobalResource("Refresh"), "Index", "Scheduler", null, new { @class = "btn " })
+    </div>
+    <div class="page-info textright">
+        <b><i class="icon-time icon-white"></i> @Html.GlobalResource("LastRefreshed")</b> <span class="js-lastrefresh">@Model.LastRefreshed</span><br/><span class="js-timezone">@Model.ServerDateTimeZone</span>
+    </div>
+}
+
+@section PageContent
+{
+    <div class="overlap">
+        <div class="boxed-grid boxed-grid-top">
+            <h2>@Html.Resource("SubHeading0")</h2>
+            <table id="voiceschedulersgrid" class="table table-striped table-hover">
+                <colgroup>
+                    <col style="width: 20%" />
+                    <col style="width: 15%" />
+                    <col style="width: 15%" />
+                    <col style="width: 50%" />
+                </colgroup>
+                <thead>
+                <tr>
+                    <th>@Html.GlobalResource("TableHeading_VoiceSchedulerId")</th>
+                    <th>@Html.GlobalResource("TableHeading_VoiceSchedulerVersion")</th>
+                    <th>@Html.GlobalResource("TableHeading_VoiceSchedulerMaintenanceMode")</th>
+                    <th>@Html.GlobalResource("TableHeading_VoiceSchedulerFeatures")</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var voiceScheduler in Model.Status)
+                {
+                    <tr>
+                        <td>@voiceScheduler.VoiceSchedulerId</td>
+                        <td>@voiceScheduler.Version</td>
+                        <td>@voiceScheduler.MaintenanceMode</td>
+                        <td>@voiceScheduler.SupportedPlanTypes</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <div class="boxed-grid boxed-grid-inner">
+            <h2>@Html.Resource("SubHeading1")</h2>
+            <table id="callenginesgrid" class="table table-striped table-hover">
+                <colgroup>
+                    <col style="width: 25%" />
+                    <col style="width: 25%" />
+                    <col style="width: 25%" />
+                    <col style="width: 25%" />
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th data-sort="@(ReflectOn<CallEngineViewData>.GetProperty(p => p.UniqueCallEngineId).Name.ToCamelCase())"><a href="#">@Html.GlobalResource("TableHeading_UniqueCallEngineId")</a></th>
+                        <th data-sort="@(ReflectOn<CallEngineViewData>.GetProperty(p => p.AddressAndPort).Name.ToCamelCase())"><a href="#">@Html.GlobalResource("TableHeading_CallEngineAddress")</a></th>
+                        <th data-sort="@(ReflectOn<CallEngineViewData>.GetProperty(p => p.VoiceSchedulerId).Name.ToCamelCase())"><a href="#">@Html.GlobalResource("TableHeading_VoiceSchedulerId")</a></th>
+                        <th data-sort="@(ReflectOn<CallEngineViewData>.GetProperty(p => p.MaintenanceMode).Name.ToCamelCase())"><a href="#">@Html.GlobalResource("TableHeading_MaintenanceMode")</a></th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+        <div class="boxed-grid boxed-grid-inner">
+            <h2>@Html.Resource("SubHeading2")</h2>
+            <table id="queuedcampaignsgrid" class="table table-striped table-hover">
+                <colgroup>
+                    <col style="width: 10%" />
+                    <col style="width: 10%" />
+                    <col style="width: 10%" />
+                    <col style="width: 10%" />
+                    <col style="width: 10%" />
+                    <col />
+                    <col style="width: 10%" />
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>@Html.GlobalResource("TableHeading_CampaignId")</th>
+                        <th>@Html.GlobalResource("TableHeading_ConcurrentPorts")</th>
+                        <th>@Html.GlobalResource("TableHeading_PlanType")</th>
+                        <th>@Html.GlobalResource("TableHeading_ScheduledTime")</th>
+                        <th>@Html.GlobalResource("TableHeading_AccountId")</th>
+                        <th>@Html.GlobalResource("TableHeading_JobName")</th>
+                        <th>@Html.GlobalResource("TableHeading_VoiceSchedulerId")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var campaign in Model.QueuedCampaigns)
+                    {
+                    <tr>
+                        <td>@campaign.CampaignId</td>
+                        <td>@campaign.ConcurrentPorts</td>
+                        <td>@campaign.PlanType</td>
+                        <td>@campaign.ScheduledDateTime</td>
+                        <td>@campaign.AccountId</td>
+                        <td>
+                            @if (campaign.CampaignId > 0)
+                            {
+                                <a href="@campaign.LinkToCampaign">@campaign.JobName</a>
+                            }
+                            else
+                            {
+                                @campaign.JobName
+                            }
+                        </td>
+                        <td>@campaign.VoiceSchedulerId</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="boxed-grid boxed-grid-bottom">
+            <h2>@Html.Resource("SubHeading3")</h2>
+            <table id="runningcampaignsgrid" class="table table-striped table-hover">
+                <colgroup>
+                    <col style="width: 10%" />
+                    <col style="width: 10%" />
+                    <col style="width: 18%" />
+                    <col style="width: 15%" />
+                    <col style="width: 10%" />
+                    <col />
+                    <col style="width: 10%" />
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>@Html.GlobalResource("TableHeading_CampaignId")</th>
+                        <th>@Html.GlobalResource("TableHeading_ConcurrentPorts")</th>
+                        <th>@Html.GlobalResource("TableHeading_JobId")</th>
+                        <th>@Html.GlobalResource("TableHeading_JobType")</th>
+                        <th>@Html.GlobalResource("TableHeading_AccountId")</th>
+                        <th>@Html.GlobalResource("TableHeading_JobName")</th>
+                        <th>@Html.GlobalResource("TableHeading_VoiceSchedulerId")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var campaign in Model.RunningCampaigns)
+                    {
+                    <tr>
+                        <td>@campaign.CampaignId</td>
+                        <td>@campaign.ConcurrentPorts</td>
+                        <td>@campaign.JobId</td>
+                        <td>@campaign.JobType</td>
+                        <td>@campaign.AccountId</td>
+                        <td>
+                            @if (campaign.CampaignId > 0)
+                            {
+                                <a href="@campaign.LinkToCampaign">@campaign.JobName</a>
+                            }
+                            else
+                            {
+                                @campaign.JobName
+                            }
+                        </td>
+                        <td>@campaign.VoiceSchedulerId</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @Html.ErrorPanel(Model.Message)
+    </div>
+    <script id="template-voiceschedulersrow" type="text/x-tmpl">
+        <tr>
+            <td>{%=o.voiceSchedulerId %}</td>
+            <td>{%=o.version %}</td>
+            <td>{%=o.maintenanceMode %}</td>
+            <td>{%=o.supportedPlanTypes %}</td>
+        </tr>
+    </script>
+    <script id="template-callenginesrow" type="text/x-tmpl">
+        <tr>
+            <td>{%= o.uniqueCallEngineId %}</td>
+            <td>{%= o.addressAndPort %}</td>
+            <td>{%= o.voiceSchedulerId %}</td>
+            <td>{%= o.maintenanceMode %}</td>
+        </tr>
+    </script>
+    <script id="template-queuedrow" type="text/x-tmpl">
+        <tr>
+            <td>{%=o.campaignId %}</td>
+            <td>{%=o.concurrentPorts %}</td>
+            <td>{%=o.planType %}</td>
+            <td>{%=o.scheduledDateTime %}</td>
+            <td>{%=o.accountId %}</td>
+            <td>
+                {% if(o.campaignId > 0) { %}
+                <a href="{%=o.linkToCampaign %}">{%=nbspIfEmpty(o.jobName) %}</a>
+                {% } else { %}
+                {%=nbspIfEmpty(o.jobName) %}
+                {% } %}
+            </td>
+            <td>{%=o.voiceSchedulerId %}</td>
+        </tr>
+    </script>
+    <script id="template-runningrow" type="text/x-tmpl">
+        <tr>
+            <td>{%=o.campaignId %}</td>
+            <td>{%=o.concurrentPorts %}</td>
+            <td>{%=o.jobId %}</td>
+            <td>{%=o.jobType %}</td>
+            <td>{%=o.accountId %}</td>
+            <td>
+                {% if(o.campaignId > 0) { %}
+                <a href="{%=o.linkToCampaign %}">{%=nbspIfEmpty(o.jobName) %}</a>
+                {% } else { %}
+                {%=nbspIfEmpty(o.jobName) %}
+                {% } %}
+            </td>
+            <td>{%=o.voiceSchedulerId %}</td>
+        </tr>
+    </script>
+
+    <script type="text/javascript">
+        $(function() {
+
+            var dashboard = new SchedulerDashboard({
+                refreshSchedulerStatusUrl: '@Url.Action("SchedulerStatus", "Scheduler", new { area = "admin" })',
+                errorState: @(Model.Message != null ? "true" : "false"),
+                callEngines: JSON.parse(@Html.RawJsonString(Model.CallEngines, true)),
+                cellEnginesSortColumn: '@(ReflectOn<CallEngineViewData>.GetProperty(p => p.UniqueCallEngineId).Name.ToCamelCase())',
+                callEnginesSortAscending: true
+            });
+
+        });
+    </script>
+
+}

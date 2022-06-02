@@ -1,0 +1,176 @@
+﻿@using Cyara.Shared.Extensions
+@using Cyara.Shared.Reflection
+@using Cyara.Shared.Web.Extensions
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Areas.Admin.Models.Notification
+@model Cyara.Web.Portal.Areas.Admin.Models.Notification.NotificationViewModel
+
+@{
+    string appRoot = System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath.Length == 1 ? 
+        System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath 
+        : string.Format("{0}/", System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+}
+
+<div class="boxed-grid boxed-grid-inner" >
+    <div class="row-fluid">
+        @using (Html.BeginForm("Index", "Notification", FormMethod.Post, new { id = "new-message-form" }))
+        {
+            <div id="accountsContainer" class="span3">
+                @Html.EditorFor(m => m.NewMessage, "AccountSelectionWidget")
+                <div class="account-selector control-group">
+                    <div class="controls">
+                        @Html.HiddenFor(m => m.NewMessage.SendingSummary, new { @class = "validate-hidden" })
+                        @Html.ValidationMessageFor(m => m.NewMessage.SendingSummary)
+                    </div>
+                </div>
+            </div>
+            
+            <div id="messageContainer" class="span9">
+                @Html.AntiForgeryToken()
+
+                <div class="control-group">
+                    @Html.LabelForWithRequired(m => m.NewMessage.Subject, new {@class = "control-label"})
+                    <div class="controls">
+                        @Html.TextBoxFor(m => m.NewMessage.Subject, new {@class = "input-xxlarge"})
+                        @Html.ValidationMessageFor(m => m.NewMessage.Subject)
+                    </div>
+                </div>
+
+                <div class="control-group form-gutter">
+                    <div>
+                        <label class="control-label pull-left bottom-align" for="@Html.IdFor(m => m.NewMessage.MessageBody)">@Cyara.Web.Resources.Labels.MessageBody<span class="required">*</span></label>    
+
+                        <div class="pull-right" id="newMessageTagDropdownContainer">
+                        
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                    
+                    <div class="controls">
+                        <div id="messageBodyTagEditor"></div>
+                        @Html.HiddenFor(m => m.NewMessage.MessageBody, new { @class = "validate-hidden" })
+                        @Html.ValidationMessageFor(m => m.NewMessage.MessageBody)
+                    </div>
+                </div>
+                
+                <div class="file-upload control-group">
+                    <h4>@Html.Resource("AttachmentsHeader")</h4>
+
+                    <span class="btn fileinput-button">
+                        <span>@Html.GlobalResource("SelectFile")</span>
+                        <input id="attachment_fileupload" type="file" name="files[]" multiple data-url="@(appRoot)Upload/UploadHandler.ashx?routeAccountId=ACCID">
+                    </span>
+                    <span class="upload-iewarning" style="display: none">
+                        @Html.Resource("IEWarning")
+                    </span>
+                    <br />
+                    <div id="attachment_fileuploadfilenames" class="panel" style="display: none">
+                        <br/>
+                        <div></div>
+                    </div>
+                    <br />
+                    <div id="attachment_progress" class="progress progress-striped">
+                        <div class="bar"></div>
+                    </div>
+                </div>
+
+                @Html.HiddenFor(m => m.NewMessage.Attachments)
+
+                <div class="form-bottom aligned-buttons no-border">
+                    @Html.ErrorPanel(Model.Message)
+
+                    <div id="selectedUsersSummary"></div>
+
+                    <button id="sendMessage" type="button" class="btn btn-primary btn-submit">@Html.Resource("SendMessageButton")</button>
+                    <button id="saveAsTemplate" type="button" class="btn btn-cancel">@Html.Resource("SaveAsTemplateButton")</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script type="text/tmpl-x" id="attachment-row">
+    <div>
+        <a target="_blank" href="{%= o.fullUrl %}">{%= o.name %}</a> (<a class="js-remove-attachment" data-name="{%= o.data %}" href="#">@Html.Resource("RemoveAttachment")</a>)
+    </div>
+</script>
+
+<script type="text/tmpl-x" id="attachment-template-error-row">
+    <div><span class="text-error">{%= o.name %}: {%= o.error %}</span> (<a class="js-remove-error" href="#">@Html.Resource("RemoveAttachment")</a>)</div>
+</script>
+
+@{ Html.RenderPartial("SaveTemplateDialog", new TemplateViewModel()); }
+
+<script type="text/javascript">
+    $(document).on("cyarainit", function() {
+        var notifications = new Notifications({
+            tagEditorSelector: "#messageBodyTagEditor",
+            tagsJson: @Html.RawJsonString(Model.NewMessage.TagsJson.ToJavascriptSafeString()),
+            sendMessageButtonSelector: "#sendMessage",
+            newMessageFormSelector: "#new-message-form",
+            messageBodySelector: "#@Html.IdFor(m => m.NewMessage.MessageBody)",
+            subjectSelector: "#@Html.IdFor(m => m.NewMessage.Subject)",
+            saveAsTemplateButtonSelector: "#saveAsTemplate",
+            sendingSummarySelector: "#@Html.IdFor(m => m.NewMessage.SendingSummary)",
+            templatesTab: 'templates',
+            newMessageTab: 'new-message',
+            toolbarContainer: '#newMessageTagDropdownContainer',
+            saveTemplateUrl: '@Url.Action("CreateTemplate", "Notification")',
+            saveTemplateHeader: '@Html.Resource("SaveAsTemplatePopupTitle")',
+            saveTemplateBodyId: 'saveTemplateDialog',
+            saveTemplateForm:  '#saveTemplateForm',
+            saveTemplateErrorMessageId: '#templateSaveError',
+            templateModelCreator: function() {
+                return {
+                    @(ReflectOn<TemplateViewModel>.GetProperty(m => m.TemplateName).Name): $('#@(ReflectOn<TemplateViewModel>.GetProperty(m => m.TemplateName).Name)').val(),
+                    @(ReflectOn<TemplateViewModel>.GetProperty(m => m.Subject).Name): $("#@Html.IdFor(m => m.NewMessage.Subject)").val(),
+                    @(ReflectOn<TemplateViewModel>.GetProperty(m => m.MessageBody).Name): $("#@Html.IdFor(m => m.NewMessage.MessageBody)").val(),
+                    @(ReflectOn<TemplateViewModel>.GetProperty(m => m.CreateMode).Name): 'True'
+                }
+            },
+            templateLoadedSuccessfullyMessage: '@Html.Resource("TemplateLoadedSuccessfully").ToJavascriptSafeString()'
+        });
+
+        $('#sendMessage').on('click', function(e) {
+            var form = $('#new-message-form');
+            if (form.valid()) {
+                var text = $("#@Html.IdFor(m => m.NewMessage.SendingSummary)").val();
+                var modal = new ModalPopup({
+                    header: '@Html.Resource("SendMessagePopupTitle")',
+                    cancelButton: '@Html.GlobalResource("Cancel") ',
+                    actionButton: '@Html.Resource("SendPopupButton")',
+                    showPrimary: true,
+                    bodyMarkup: text,
+                    clickHandler: $.proxy(function() {
+                        modal.close();
+                        form.submit();
+                    }, this)
+                });
+            }
+        });
+
+        var attachUpload = new AttachmentUpload(
+            {
+                prefix: 'attachment',
+                fileUpload: '_fileupload',
+                uploadedFilenames: '_fileuploadfilenames',
+                maxFileSize: @Model.MaximumAttachmentSizeInBytes,
+                formData: function() {
+                    return [
+                        { name: '@RequestData.Keys.Source', value: '@RequestData.Values.Attachment' }
+                    ];
+                },
+                progress: '_progress',
+                form: '#new-message-form',
+                attachmentRowTemplate: 'attachment-row',
+                attachmentErrorRowTemplate: '-template-error-row',
+                attachmentUrlTemplate: '@Url.RouteUrl("Attachment", new RouteValueDictionary { { "resource", "REPLRES" } })',
+                attachmentsSelector: '#@Html.IdFor(m => m.NewMessage.Attachments)',
+                removeAttachmentSelector: 'a.js-remove-attachment',
+                removeErrorSelector: 'a.js-remove-error',
+                deleteAttachmentUrl: '@Url.Action("DeleteAttachment", "Notification", new { attachment = "REPLRES" })',
+                customFileTypes: '@Model.AcceptedAttachmentFileTypes.ToJavascriptSafeString()'
+            });
+    });
+</script>

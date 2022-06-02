@@ -1,0 +1,265 @@
+﻿@using Cyara.Domain.Types.TestResult
+@using Cyara.Shared.Extensions
+@using Cyara.Shared.Reflection
+@using Cyara.Shared.Types.ReportSchedule
+@using Cyara.Shared.Types.TestCase
+@using Cyara.Shared.Web.Script.Controls
+@using Cyara.Shared.Web.Types.Constants
+@using Cyara.Web.Common.Extensions
+@using Cyara.Web.Portal.Areas.Report.Extensions
+@using Cyara.Web.Portal.Areas.Report.Models
+@using Cyara.Web.Portal.Core.Extensions
+@using Cyara.Web.Portal.Core.SiteMap
+@using MvcSiteMapProvider.Web.Html
+@model Cyara.Web.Portal.Areas.Report.Models.ExecuteCustomReportViewModel
+
+@{
+    ViewBag.Title = Html.Resource("Title");
+}
+
+@helper PopoverButtonMarkup(string nextRun, ScheduleStatusEnum status)
+{
+    switch (status)
+    {
+        case ScheduleStatusEnum.Disabled:
+            <span class="danger with-gap" style="padding-right: 16px;"></span>
+            <span id="scheduleDisabled">@Html.GlobalResource("ScheduleDisabled")</span>
+            break;
+
+        case ScheduleStatusEnum.Expired:
+            <span class="warning with-gap"></span>
+            <span id="scheduleExpired" style="padding-right: 16px;">@Html.GlobalResource("ScheduleExpired")</span>
+            break;
+
+        case ScheduleStatusEnum.NonExistent:
+            <span id="scheduleEmpty">@Html.Resource("NotScheduledReport")</span>
+            break;
+
+        case ScheduleStatusEnum.Active:
+            <span class="greentick with-gap"></span>
+            <span id="scheduleActive">@Html.Resource("ScheduledReportTime")</span> <span id="nextScheduledRun" class="scheduled-date">@nextRun</span>
+        break;
+    }
+}
+
+@section Breadcrumbs
+{
+    @Html.MvcSiteMap().GenerateBreadcrumbs(new[] { Url.Action("Index"), Url.Action("Edit", new { id = "" }) })
+}
+
+@section PageHead
+{
+    <input type="text" placeholder="@Html.Resource("EnterReportName")" id="reportName" style="display: none;" value="@Model.ReportName" @Html.Raw(new EditableTitle
+                                                                                            {
+                                                                                                Tooltip = @Html.Resource("ChangeTitleTooltip"),
+                                                                                                UpdateUrl = Url.Action("UpdateReportName", new { id = Model.ReportId }),
+                                                                                                Model = new EditCustomReportNameViewModel { SelectedAccountId = Model.SelectedAccountId, ReportId = Model.ReportId },
+                                                                                                Property = ReflectOn<EditCustomReportNameViewModel>.GetProperty(p => p.ReportName).Name.ToCamelCase()
+                                                                                            }.ToAttribute())/>
+}
+
+@section PageHeadRight
+{
+    <span class="wide-popover inline-input" style="padding-right: 18px;" >
+        @Html.Raw(new PopoverButton
+   {
+       CssClass = "btn greentick js-schedule-pop",
+       Text = PopoverButtonMarkup(Model.NextScheduledReport, Model.ScheduleStatus).ToHtmlString(),
+       FormUrl = Url.Action("Schedule", new { id = Model.ReportId }),
+       Placement = "bottom",
+       Template = "<div class='popover schedule-pop' style='width: 560px !important; max-width: 560px !important;'><div class='arrow'></div><div class='popover-content'></div></div>"
+   }.ToHtmlString())
+    </span>
+    <div class="btn-group">
+        <a href="#" class="btn js-export"  style="width: 100px;" data-type="@CustomReportExportType.Xls">@Html.Resource("Export")</a>
+        <button data-toggle="dropdown" tabindex="-1" class="btn dropdown-toggle"><span class="caret"></span></button>
+        <ul class="dropdown-menu pull-right">
+            <li class="lnk"><button id="btnExportPDF" tabindex="-1" class="js-export" data-type="@CustomReportExportType.Pdf" data-resulttype="">@CustomReportExportType.Pdf.ToLabel()</button></li>
+            <li class="lnk"><button id="btnExportXLS" tabindex="-1" class="js-export" data-type="@CustomReportExportType.Xls" data-resulttype="">@CustomReportExportType.Xls.ToLabel()</button></li>
+        </ul>
+    </div>
+}
+
+@section PageContent
+{
+    <div class="overlap">
+
+        @using (Html.BeginForm())
+        {
+            @Html.Partial("Filters", Model)
+        }
+
+        <div class="boxed-divider"></div>
+
+        @*-- Summary with donut chart --*@
+        <div class="boxed">
+            <h2>@Html.Resource("DonutTitle")</h2>
+            <h3>@Html.ReportingResource("HeaderTotalCalls", "HeaderTotalSessions")</h3>
+
+            <div class="row-fluid">
+                <div class="span6">
+                    <div class="pull-left">
+                        <div id="ReportSummaryDataArea" style="width: 350px;"></div>
+                    </div>
+
+                    <div class="pull-left">
+                        @if (Model != null && Model.TestResultSummaries != null)
+                        {
+                            <table id="ReportSummaryData" style="display: none" data-calls-label="@Html.ReportingGlobalResource("TotalCalls", "TotalSessions")">
+                                @foreach (var testResultSummary in Model.TestResultSummaries)
+                                {
+                                    <tr>
+                                        <th scope="row" data-type="label">@testResultSummary.ResultType.ToLabel()</th>
+                                        <td data-type="data">@testResultSummary.Number</td>
+                                        <td data-type="colourCode" class="legend-colour label @testResultSummary.ResultType.ToString().ToLower()"></td>
+                                        <td data-type="link">@Url.Action(@testResultSummary.ResultType.ToActionName(), new {routeAccountId = Model.SelectedAccountId, id = Model.ReportId})</td>
+                                    </tr>
+                                }
+                            </table>
+                            <div class="pull-right">
+                                <table class="legend-grid">
+                                    @foreach (var testResultSummary in Model.TestResultSummaries)
+                                    {
+                                        <tr>
+                                            <td data-type="colour" title="@testResultSummary.Percent%"><span class="@testResultSummary.ResultType.ToString().ToLower() label legend-colour">&nbsp;</span></td>
+                                            <td data-type="label"><a title="@testResultSummary.Percent%" href="@Url.Action(@testResultSummary.ResultType.ToActionName(), new {routeAccountId = Model.SelectedAccountId, id = Model.ReportId})">@testResultSummary.ResultType.ToLabel()</a></td>
+                                        </tr>
+                                    }
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*-- table with details of Test Cases --*@
+        <div class="boxed" id="customresultsgrid">
+            <h2 aria-label="@Html.GlobalResource("Details")"></h2>
+            <table id="reportsgrid" class="table table-striped table-hover finger truncated">
+                <colgroup>
+                    <col/>
+                    <col/>
+                    <col style="width: 10%"/>
+                    <col style="width: 10%"/>
+                    <col style="width: 10%"/>
+                    <col style="width: 10%"/>
+                    <col style="width: 10%"/>
+                    <col style="width: 10%"/>
+                </colgroup>
+                <thead>
+                <tr>
+                    <th class="result-cell"></th>
+                    <th data-sort="@Columns.TestCase"><a href="#">@Html.GlobalResource("TableHeading_TestCase")</a></th>
+                    <th data-sort="@Columns.TotalCalls"><a href="#">@Html.GlobalResource("TableHeading_Total")</a></th>
+                    <th data-sort="@Columns.Success"><a href="#">@ResultType.Success.ToLabel()</a></th>
+                    <th data-sort="@Columns.Satisfactory"><a href="#">@ResultType.Satisfactory.ToLabel()</a></th>
+                    <th data-sort="@Columns.Failed"><a href="#">@ResultType.Failed.ToLabel()</a></th>
+                    <th data-sort="@Columns.Percent"><a href="#">@Html.GlobalResource("TableHeading_SuccessPercentage")</a></th>
+                    <th data-sort="@Columns.Severity"><a href="#">@Html.GlobalResource("TableHeading_Severity")</a></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.TestCases.Collection)
+                {
+                    <tr data-customReportId="@item.Id">
+                        <td class="result-cell @item.ResultStatus"></td>
+                        <td class="truncate js-name">@Html.ActionLink(item.PathAndName, "TestCaseBreakdown", new { id = Model.ReportId, path = item.Path, name = item.Name })</td>
+                        <td class="truncate">@item.Total</td>
+                        <td class="truncate">@item.Success</td>
+                        <td class="truncate">@item.Satisfactory</td>
+                        <td class="truncate">@item.Failed</td>
+                        <td class="truncate">@item.SuccessRate</td>
+                        <td><span class="label @item.SeverityStatus">@item.SeverityLabel</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script id="template-row" type="text/x-tmpl">
+        <tr data-customReportId="{%= o.id %}">
+            <td class="result-cell {%= o.resultStatus %}"></td>
+            <td class="truncate js-name"><a href="{%= '@Html.Raw(Url.Action("TestCaseBreakdown", new { id = -1, path = "PATH", name = "NAME" }))'.replace("-1", o.id).replace("PATH", encodeURIComponent(o.path == null? "" : o.path)).replace("NAME", encodeURIComponent(o.name)) %}">{%= o.pathAndName %}</a></td>
+            <td class="truncate">{%= o.total %}</td>
+            <td class="truncate">{%= o.success %}</td>
+            <td class="truncate">{%= o.satisfactory %}</td>
+            <td class="truncate">{%= o.failed %}</td>
+            <td class="truncate">{%= o.successRate %}</td>
+            <td><span class="label {%= o.severityStatus %}">{%= o.severityLabel %}</span></td>
+        </tr>
+    </script>
+
+    <script id="button-markup-active" type="text/x-tmpl">
+        @this.PopoverButtonMarkup("{0}", ScheduleStatusEnum.Active)
+    </script>
+
+    <script id="button-markup-notactive" type="text/x-tmpl">
+        @this.PopoverButtonMarkup(null, ScheduleStatusEnum.Disabled)
+    </script>
+
+    <script id="button-markup-expired" type="text/x-tmpl">
+        @this.PopoverButtonMarkup(null, ScheduleStatusEnum.Expired)
+    </script>
+
+    <script type="text/javascript">
+        $(function() {
+
+            var popoverHandler = new ReportChartPopover({
+                dataUrl: '@Url.Action("PopoverData", "Custom", new { id = Model.ReportId })',
+                dataUrlPayloadFn: function(label) {
+                    return JSON.stringify({ resultType: label, timestamp: '@Html.Raw(Model.ViewLoaded)', SelectedAccountId: $("#SelectedAccountId").val() });
+                },
+                enableLinks: false,
+                callsLabel: $('#ReportSummaryData').attr('data-calls-label')
+            });
+
+            var chart = new ReportChart({
+                dataTableName: 'ReportSummaryData',
+                chartTableName: 'ReportSummaryDataArea',
+                generateColours: false,
+                enableLinks: true,
+                enablePopovers: true,
+                popoverHandler: popoverHandler
+            });
+
+            var grid = new AjaxGrid({
+                dataSourceUrl: '@Url.Action("SummaryList", "Custom", new { id = Model.ReportId, timestamp = @Html.Raw(Model.ViewLoaded) })',
+                table: '#reportsgrid',
+                totalPages: @Model.TestCases.TotalPages,
+                collectionSize: @Model.TestCases.CollectionSize,
+                pageSize: @Model.TestCases.PageSize,
+                pageNumber: @Model.TestCases.PageNumber,
+                sortColumn: '@Model.TestCases.SortColumn.ToJavascriptSafeString()',
+                sortAscending: @Model.TestCases.SortAscending.ToJavaScript(),
+                rowTemplate: 'template-row',
+                recordLabel: '@Html.Resource("RecordLabel").ToJavascriptSafeString()',
+                ignoreActiveClick: false,
+                autoClickFirstLink: true,
+                noStateInStorage: true
+            });
+
+            var sr = new ScheduleReport(
+            {
+                element: ".js-schedule-pop",
+                activeTemplate: "button-markup-active",
+                inactiveTemplate: "button-markup-notactive",
+                expiredTemplate: "button-markup-expired",
+                alwaysAvailableValue: '@ScheduleUnavailableOption.AlwaysAvailable'
+            });
+
+
+            // if we open this page with special tag "#schedule", we open scheduler screen immediately
+            if (window.location.href.indexOf('#schedule') >= 0) {
+                if (typeof (window.history.replaceState) != "undefined") {
+                    history.replaceState("", "", window.location.href.replace("#schedule", ""));
+                } else {
+                    window.location.hash = "";
+                }
+                $(".js-schedule-pop").click();
+            }
+
+        });
+    </script>
+}
