@@ -1,9 +1,6 @@
-<<<<<<< Updated upstream
-Git changes sgldhgh
-=======
-Changes in file done.  Changes in branch2 will stash.
 
->>>>>>> Stashed changes
+Git changes sgldhgh
+
 namespace Cyara.Web.Portal.Areas.Admin
 {
     using System;
