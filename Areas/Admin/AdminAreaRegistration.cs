@@ -1,4 +1,6 @@
-﻿namespace Cyara.Web.Portal.Areas.Admin
+Changes in file done.
+
+namespace Cyara.Web.Portal.Areas.Admin
 {
     using System;
     using System.Web.Mvc;
